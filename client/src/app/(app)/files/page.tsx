@@ -4,10 +4,18 @@ import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, Trash2, UploadCloud, FileText } from "lucide-react";
+import {
+  Search,
+  Trash2,
+  UploadCloud,
+  FileText,
+  Image as ImageIcon,
+} from "lucide-react";
+
 import { api, formatBytes, formatDate } from "@/lib/api";
 import { queryKeys, useFiles } from "@/hooks/use-queries";
 import type { FileSortBy, SafeFileDto, SortOrder } from "@/types";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,6 +37,15 @@ import { useToast } from "@/components/ui/toast";
 
 const PAGE_SIZE = 10;
 
+const ACCEPTED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+];
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
 export default function FilesPage() {
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -45,7 +62,14 @@ export default function FilesPage() {
   const [uploading, setUploading] = useState(false);
 
   const query = useMemo(
-    () => ({ page, limit: PAGE_SIZE, search, type, sortBy, sortOrder }),
+    () => ({
+      page,
+      limit: PAGE_SIZE,
+      search,
+      type,
+      sortBy,
+      sortOrder,
+    }),
     [page, search, type, sortBy, sortOrder],
   );
 
@@ -56,24 +80,74 @@ export default function FilesPage() {
     setPage(1);
   }, [searchInput]);
 
+  /**
+   * Upload files
+   *
+   * API:
+   * POST /api/v1/files/upload
+   *
+   * multipart/form-data:
+   * files: File[]
+   */
   const uploadMutation = useMutation({
-    mutationFn: async (files: FileList | File[]) => {
+    mutationFn: async (files: File[]) => {
+      if (files.length === 0) {
+        throw new Error("Please select at least one image.");
+      }
+
+      // Validate files before sending them
+      for (const file of files) {
+        if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+          throw new Error(
+            `Unsupported file type: ${file.name}. Please select JPG, PNG, WEBP, or GIF.`,
+          );
+        }
+
+        if (file.size > MAX_FILE_SIZE) {
+          throw new Error(
+            `${file.name} is too large. Maximum file size is 10 MB.`,
+          );
+        }
+      }
+
       const formData = new FormData();
-      Array.from(files).forEach((file) => formData.append("files", file));
-      await api.post("/files/upload", formData, {
-        headers: { "Content-Type": null },
+
+      files.forEach((file) => {
+        formData.append("files", file, file.name);
       });
+
+      /**
+       * Do NOT manually set Content-Type.
+       *
+       * The browser will automatically generate:
+       *
+       * multipart/form-data; boundary=...
+       */
+      const response = await api.post("/files/upload", formData);
+
+      return response.data;
     },
+
     onSuccess: () => {
       toast(t("files.uploadSuccess"), "success");
+
       setUploadError(null);
-      queryClient.invalidateQueries({ queryKey: ["user-stats"] });
-      queryClient.invalidateQueries({ queryKey: queryKeys.files(query) });
+
+      queryClient.invalidateQueries({
+        queryKey: ["user-stats"],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.files(query),
+      });
     },
+
     onError: (error: unknown) => {
-      setUploadError(
-        error instanceof Error ? error.message : t("files.uploadFailed"),
-      );
+      const message =
+        error instanceof Error ? error.message : t("files.uploadFailed");
+
+      setUploadError(message);
+      toast(message, "error");
     },
   });
 
@@ -81,11 +155,19 @@ export default function FilesPage() {
     mutationFn: async (id: string) => {
       await api.delete(`/files/${id}`);
     },
+
     onSuccess: () => {
       toast(t("files.deleted"), "success");
-      queryClient.invalidateQueries({ queryKey: ["user-stats"] });
-      queryClient.invalidateQueries({ queryKey: queryKeys.files(query) });
+
+      queryClient.invalidateQueries({
+        queryKey: ["user-stats"],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.files(query),
+      });
     },
+
     onError: (error: unknown) => {
       toast(
         error instanceof Error ? error.message : t("files.deleteFailed"),
@@ -94,13 +176,18 @@ export default function FilesPage() {
     },
   });
 
-  const handleUpload = (files: FileList | null) => {
-    if (!files || files.length === 0) {
+  const handleUpload = (files: File[]) => {
+    if (files.length === 0) {
       return;
     }
+
+    setUploadError(null);
     setUploading(true);
+
     uploadMutation.mutate(files, {
-      onSettled: () => setUploading(false),
+      onSettled: () => {
+        setUploading(false);
+      },
     });
   };
 
@@ -111,29 +198,35 @@ export default function FilesPage() {
       setSortBy(column);
       setSortOrder(column === "name" || column === "size" ? "asc" : "desc");
     }
+
     setPage(1);
   };
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t("files.title")}</h1>
-        <p className="text-sm text-muted-foreground">
-          {t("files.subtitle")}
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          {t("files.title")}
+        </h1>
+
+        <p className="text-sm text-muted-foreground">{t("files.subtitle")}</p>
       </div>
 
+      {/* Upload */}
       <UploadCard
         uploading={uploading || uploadMutation.isPending}
         error={uploadError}
         onUpload={handleUpload}
       />
 
+      {/* Filters */}
       <Card>
         <CardContent className="p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+
               <Input
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
@@ -146,6 +239,7 @@ export default function FilesPage() {
                 className="ps-9"
               />
             </div>
+
             <Input
               value={type}
               onChange={(event) => {
@@ -155,11 +249,13 @@ export default function FilesPage() {
               placeholder={t("files.typePlaceholder")}
               className="sm:w-36"
             />
+
             <Button variant="outline" onClick={applySearch}>
               {t("common.search")}
             </Button>
           </div>
 
+          {/* Error */}
           {isError ? (
             <Alert variant="error" className="mt-4">
               {t("files.loadError")}{" "}
@@ -173,6 +269,7 @@ export default function FilesPage() {
             </Alert>
           ) : null}
 
+          {/* Files */}
           <div className="mt-4">
             {isLoading ? (
               <div className="space-y-2">
@@ -201,26 +298,31 @@ export default function FilesPage() {
                         order={sortOrder}
                         onClick={() => toggleSort("name")}
                       />
+
                       <TableHead className="hidden md:table-cell">
                         {t("files.type")}
                       </TableHead>
+
                       <SortableHead
                         label={t("files.size")}
                         active={sortBy === "size"}
                         order={sortOrder}
                         onClick={() => toggleSort("size")}
                       />
+
                       <SortableHead
                         label={t("files.uploaded")}
                         active={sortBy === "createdAt"}
                         order={sortOrder}
                         onClick={() => toggleSort("createdAt")}
                       />
+
                       <TableHead className="text-right">
                         {t("files.actions")}
                       </TableHead>
                     </TableRow>
                   </TableHeader>
+
                   <TableBody>
                     {data.data.map((file) => (
                       <TableRow key={file.id}>
@@ -233,13 +335,17 @@ export default function FilesPage() {
                             {file.originalName}
                           </Link>
                         </TableCell>
+
                         <TableCell className="hidden md:table-cell">
                           <Badge variant="outline">{file.extension}</Badge>
                         </TableCell>
+
                         <TableCell>{formatBytes(file.size)}</TableCell>
+
                         <TableCell className="whitespace-nowrap text-muted-foreground">
                           {formatDate(file.createdAt)}
                         </TableCell>
+
                         <TableCell className="text-right">
                           <Button
                             variant="ghost"
@@ -256,6 +362,7 @@ export default function FilesPage() {
                     ))}
                   </TableBody>
                 </Table>
+
                 <Pagination
                   className="mt-4"
                   page={data.pagination.page}
@@ -269,6 +376,7 @@ export default function FilesPage() {
         </CardContent>
       </Card>
 
+      {/* Delete confirmation */}
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         onOpenChange={(open) => {
@@ -292,6 +400,9 @@ export default function FilesPage() {
   );
 }
 
+/**
+ * Upload Card
+ */
 function UploadCard({
   uploading,
   error,
@@ -299,7 +410,7 @@ function UploadCard({
 }: {
   uploading: boolean;
   error: string | null;
-  onUpload: (files: FileList | null) => void;
+  onUpload: (files: File[]) => void;
 }) {
   const { t } = useTranslation();
 
@@ -307,30 +418,58 @@ function UploadCard({
     <Card className="border-dashed">
       <CardContent className="flex flex-col items-center gap-3 p-6 text-center">
         <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-          <UploadCloud className="size-6" />
+          <ImageIcon className="size-6" />
         </div>
+
         <div>
           <p className="text-sm font-medium">{t("files.uploadFiles")}</p>
+
           <p className="text-sm text-muted-foreground">
             {t("files.uploadHint")}
           </p>
+
+          <p className="mt-1 text-xs text-muted-foreground">
+            JPG, PNG, WEBP, GIF — Max 10 MB
+          </p>
         </div>
+
         <label>
           <span className="sr-only">{t("files.chooseFilesToUpload")}</span>
+
           <input
             type="file"
             multiple
+            accept="image/jpeg,image/png,image/webp,image/gif"
             disabled={uploading}
             className="hidden"
             onChange={(event) => {
-              onUpload(event.target.files);
+              // Take a stable snapshot of the FileList *before* the input
+              // is reset below — FileList is live and tied to the input,
+              // so resetting it first would leave us with an empty array
+              // by the time the async mutation actually runs.
+              const files = Array.from(event.target.files ?? []);
               event.target.value = "";
+              onUpload(files);
             }}
           />
-          <span className="inline-flex h-10 cursor-pointer items-center justify-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:pointer-events-none disabled:opacity-50">
+
+          <span
+            className={[
+              "inline-flex h-10 items-center justify-center rounded-md",
+              "bg-primary px-6 text-sm font-medium",
+              "text-primary-foreground",
+              "transition-opacity hover:opacity-90",
+              uploading
+                ? "pointer-events-none cursor-not-allowed opacity-50"
+                : "cursor-pointer",
+            ].join(" ")}
+          >
+            <UploadCloud className="me-2 size-4" />
+
             {uploading ? t("common.uploading") : t("common.chooseFiles")}
           </span>
         </label>
+
         {error ? (
           <Alert variant="error" className="mt-1">
             {error}
@@ -341,6 +480,9 @@ function UploadCard({
   );
 }
 
+/**
+ * Sortable Table Header
+ */
 function SortableHead({
   label,
   active,
@@ -364,6 +506,7 @@ function SortableHead({
         }
       >
         {label}
+
         <span className="text-[10px] text-muted-foreground">
           {active ? (order === "asc" ? "▲" : "▼") : "↕"}
         </span>

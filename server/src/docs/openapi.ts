@@ -33,7 +33,7 @@ export const openapi = {
   info: {
     title: 'Managing Your Files — API',
     version: '1.0.0',
-    description: `REST API for the **Managing Your Files** platform.\n\nEvery protected endpoint requires a JWT access token obtained from \`POST /api/auth/login\` (or by registering and verifying your email). Click **Authorize** and paste your token to enable authenticated requests.\n\n### Authentication flow\n1. Register an account (\`POST /api/auth/register\`).\n2. Verify your email using the 6-digit code (\`POST /api/auth/verify-email\`).\n3. Log in to receive a JWT (\`POST /api/auth/login\`).`,
+    description: `REST API for the **Managing Your Files** platform.\n\nEvery protected endpoint requires a JWT access token obtained from \`POST /api/v1/auth/login\` (or by registering and verifying your email). Click **Authorize** and paste your token to enable authenticated requests.\n\n### Authentication flow\n1. Register an account (\`POST /api/v1/auth/register\`).\n2. Verify your email using the 6-digit code (\`POST /api/v1/auth/verify-email\`).\n3. Log in to receive a JWT (\`POST /api/v1/auth/login\`).`,
     contact: {
       name: 'Managing Your Files',
       email: env.GMAIL_USER || 'support@example.com',
@@ -60,7 +60,7 @@ export const openapi = {
         scheme: 'bearer',
         bearerFormat: 'JWT',
         description:
-          'JWT access token. Get one via `POST /api/auth/login` — it is issued for 7 days.',
+          'JWT access token. Get one via `POST /api/v1/auth/login` — it is issued for 7 days.',
       },
     },
     schemas: {
@@ -317,7 +317,7 @@ export const openapi = {
     },
   },
   paths: {
-    '/api/auth/register': {
+    '/api/v1/auth/register': {
       post: {
         tags: ['Authentication'],
         summary: 'Register a new account',
@@ -350,7 +350,7 @@ export const openapi = {
         },
       },
     },
-    '/api/auth/verify-email': {
+    '/api/v1/auth/verify-email': {
       post: {
         tags: ['Authentication'],
         summary: 'Verify an email address',
@@ -380,7 +380,7 @@ export const openapi = {
         },
       },
     },
-    '/api/auth/resend-code': {
+    '/api/v1/auth/resend-code': {
       post: {
         tags: ['Authentication'],
         summary: 'Resend the verification code',
@@ -410,7 +410,7 @@ export const openapi = {
         },
       },
     },
-    '/api/auth/login': {
+    '/api/v1/auth/login': {
       post: {
         tags: ['Authentication'],
         summary: 'Log in',
@@ -450,7 +450,7 @@ export const openapi = {
         },
       },
     },
-    '/api/auth/profile': {
+    '/api/v1/auth/profile': {
       get: {
         tags: ['Authentication'],
         summary: 'Get the current user',
@@ -470,7 +470,7 @@ export const openapi = {
         },
       },
     },
-    '/api/users': {
+    '/api/v1/users': {
       get: {
         tags: ['Users'],
         summary: 'List users',
@@ -501,7 +501,7 @@ export const openapi = {
         },
       },
     },
-    '/api/users/{id}': {
+    '/api/v1/users/{id}': {
       patch: {
         tags: ['Users'],
         summary: 'Update a user’s role',
@@ -561,7 +561,7 @@ export const openapi = {
         },
       },
     },
-    '/api/files/upload': {
+    '/api/v1/files/upload': {
       post: {
         tags: ['Files'],
         summary: 'Upload files',
@@ -611,7 +611,7 @@ export const openapi = {
         },
       },
     },
-    '/api/files': {
+    '/api/v1/files': {
       get: {
         tags: ['Files'],
         summary: 'List your files',
@@ -641,7 +641,7 @@ export const openapi = {
         },
       },
     },
-    '/api/files/{id}': {
+    '/api/v1/files/{id}': {
       get: {
         tags: ['Files'],
         summary: 'Get a file',
@@ -692,7 +692,7 @@ export const openapi = {
         },
       },
     },
-    '/api/admin/files': {
+    '/api/v1/admin/files': {
       get: {
         tags: ['Admin'],
         summary: 'List all files',
@@ -724,7 +724,7 @@ export const openapi = {
         },
       },
     },
-    '/api/admin/files/{id}': {
+    '/api/v1/admin/files/{id}': {
       delete: {
         tags: ['Admin'],
         summary: 'Delete any file',
@@ -751,7 +751,7 @@ export const openapi = {
         },
       },
     },
-    '/api/stats/user': {
+    '/api/v1/stats/user': {
       get: {
         tags: ['Stats'],
         summary: 'Get your storage stats',
@@ -788,7 +788,7 @@ export const openapi = {
         },
       },
     },
-    '/api/stats/admin': {
+    '/api/v1/stats/admin': {
       get: {
         tags: ['Stats'],
         summary: 'Get platform stats',

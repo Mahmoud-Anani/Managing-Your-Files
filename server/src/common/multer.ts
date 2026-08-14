@@ -6,7 +6,7 @@ import multer from 'multer';
 import { env } from '../config/env';
 import { ValidationError } from './errors';
 
-export const STORAGE_DIR = path.resolve(__dirname, '../../../storage');
+export const STORAGE_DIR = path.resolve(__dirname, '../../uploads/');
 mkdirSync(STORAGE_DIR, { recursive: true });
 
 export const MAX_FILE_SIZE = env.MAX_FILE_SIZE_MB * 1024 * 1024;
