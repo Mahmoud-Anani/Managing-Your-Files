@@ -65,8 +65,8 @@ export default function FilesPage() {
     () => ({
       page,
       limit: PAGE_SIZE,
-      search,
-      type,
+      ...(search ? { search } : {}),
+      ...(type ? { type } : {}),
       sortBy,
       sortOrder,
     }),
@@ -98,9 +98,7 @@ export default function FilesPage() {
       // Validate files before sending them
       for (const file of files) {
         if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-          throw new Error(
-            t("files.unsupportedType", { name: file.name }),
-          );
+          throw new Error(t("files.unsupportedType", { name: file.name }));
         }
 
         if (file.size > MAX_FILE_SIZE) {
@@ -228,7 +226,7 @@ export default function FilesPage() {
         <CardContent className="p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="relative flex-1">
-              <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="pointer-events-none absolute inset-s-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 
               <Input
                 value={searchInput}

@@ -8,12 +8,7 @@ import { ArrowLeft, Download, FileText, Trash2 } from "lucide-react";
 import { api, formatBytes } from "@/lib/api";
 import { useFile } from "@/hooks/use-queries";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert } from "@/components/ui/alert";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -39,7 +34,10 @@ export default function FileDetailPage() {
       router.replace("/files");
     },
     onError: (error: unknown) => {
-      toast(error instanceof Error ? error.message : t("files.deleteFailed"), "error");
+      toast(
+        error instanceof Error ? error.message : t("files.deleteFailed"),
+        "error",
+      );
     },
   });
 
@@ -98,7 +96,7 @@ export default function FileDetailPage() {
         </div>
         <div className="flex items-center gap-2">
           <a
-            href={data.url}
+            href={`${process.env.NEXT_PUBLIC_API_URL}${data.url}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-border bg-transparent px-3 text-xs font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
