@@ -4,14 +4,15 @@ import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Download, FileText, Trash2 } from "lucide-react";
-import { api, formatBytes } from "@/lib/api";
+import { ArrowLeft, Download, Eye, FileText, Trash2 } from "lucide-react";
+import { api, fetchFileBlob, formatBytes } from "@/lib/api";
 import { useFile } from "@/hooks/use-queries";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert } from "@/components/ui/alert";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { FilePreviewDialog } from "@/components/files/file-preview-dialog";
 import { useToast } from "@/components/ui/toast";
 
 export default function FileDetailPage() {
@@ -21,21 +22,46 @@ export default function FileDetailPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const { data, isLoading, isError, refetch } = useFile(id);
+
+  const previewFile = useMemo(() => (data ? { ...data } : null), [data]);
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
       await api.delete(`/files/${id}`);
     },
     onSuccess: () => {
-      toast(t("files.deleted"), "success");
+      toast(t("files.movedToTrash"), "success");
       queryClient.invalidateQueries({ queryKey: ["files"] });
       router.replace("/files");
     },
     onError: (error: unknown) => {
       toast(
         error instanceof Error ? error.message : t("files.deleteFailed"),
+        "error",
+      );
+    },
+  });
+
+  const downloadMutation = useMutation({
+    mutationFn: async () => {
+      const blob = await fetchFileBlob(id, "download");
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = data?.originalName ?? "file";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    },
+    onSettled: () => setDownloading(false),
+    onError: (error: unknown) => {
+      toast(
+        error instanceof Error ? error.message : t("files.downloadFailed"),
         "error",
       );
     },
@@ -95,14 +121,20 @@ export default function FileDetailPage() {
           </h1>
         </div>
         <div className="flex items-center gap-2">
-          <a
-            href={data.url.startsWith('http') ? data.url : `${process.env.NEXT_PUBLIC_API_URL}${data.url}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-border bg-transparent px-3 text-xs font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          <Button
+            variant="outline"
+            size="sm"
+            loading={downloading || downloadMutation.isPending}
+            onClick={() => {
+              setDownloading(true);
+              downloadMutation.mutate();
+            }}
           >
-            <Download className="size-4" /> {t("files.open")}
-          </a>
+            <Download className="size-4" /> {t("files.download")}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setPreviewOpen(true)}>
+            <Eye className="size-4" /> {t("files.preview")}
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -146,12 +178,18 @@ export default function FileDetailPage() {
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
         title={t("files.deleteTitle")}
-        description={t("files.deleteConfirmShort", {
+        description={t("files.deleteConfirmTrash", {
           name: data.originalName,
         })}
         confirmLabel={t("common.delete")}
         destructive
         onConfirm={() => deleteMutation.mutateAsync()}
+      />
+
+      <FilePreviewDialog
+        file={previewFile}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
       />
     </div>
   );

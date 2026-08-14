@@ -5,7 +5,9 @@ import { api } from "@/lib/api";
 import type {
   AdminListFilesQuery,
   AdminStats,
+  AuditLogDto,
   FileDetailDto,
+  ListAuditLogsQuery,
   ListFilesQuery,
   ListUsersQuery,
   PaginatedResult,
@@ -17,10 +19,13 @@ import type {
 export const queryKeys = {
   userStats: (days: number) => ["user-stats", days] as const,
   files: (query: ListFilesQuery) => ["files", query] as const,
+  trash: (query: ListFilesQuery) => ["files", "trash", query] as const,
   file: (id: string) => ["file", id] as const,
   adminStats: () => ["admin-stats"] as const,
   adminFiles: (query: AdminListFilesQuery) => ["admin-files", query] as const,
   users: (query: ListUsersQuery) => ["users", query] as const,
+  auditLogs: (query: ListAuditLogsQuery) => ["audit-logs", query] as const,
+  auditActions: () => ["audit-actions"] as const,
 };
 
 export function useUserStats(days = 7) {
@@ -48,9 +53,23 @@ export function useFiles(query: ListFilesQuery) {
   });
 }
 
-export function useFile(id: string) {
+export function useTrash(query: ListFilesQuery) {
+  return useQuery({
+    queryKey: queryKeys.trash(query),
+    queryFn: async () => {
+      const { data } = await api.get<PaginatedResult<SafeFileDto>>(
+        "/files/trash",
+        { params: query },
+      );
+      return data;
+    },
+  });
+}
+
+export function useFile(id: string, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.file(id),
+    enabled: options?.enabled !== false && Boolean(id),
     queryFn: async () => {
       const { data } = await api.get<FileDetailDto>(`/files/${id}`);
       return data;
@@ -90,6 +109,31 @@ export function useUsers(query: ListUsersQuery) {
         { params: query },
       );
       return data;
+    },
+  });
+}
+
+export function useAuditLogs(query: ListAuditLogsQuery) {
+  return useQuery({
+    queryKey: queryKeys.auditLogs(query),
+    queryFn: async () => {
+      const { data } = await api.get<PaginatedResult<AuditLogDto>>(
+        "/admin/audit-logs",
+        { params: query },
+      );
+      return data;
+    },
+  });
+}
+
+export function useAuditActions() {
+  return useQuery({
+    queryKey: queryKeys.auditActions(),
+    queryFn: async () => {
+      const { data } = await api.get<{ data: string[] }>(
+        "/admin/audit-logs/actions",
+      );
+      return data.data;
     },
   });
 }

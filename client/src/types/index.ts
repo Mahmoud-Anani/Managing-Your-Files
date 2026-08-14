@@ -48,10 +48,32 @@ export interface SafeFileDto {
   url: string;
   userId: string;
   createdAt: string;
+  deletedAt: string | null;
 }
 
 export interface FileDetailDto extends SafeFileDto {
   extractedText: string | null;
+}
+
+export interface AuditLogDto {
+  id: string;
+  userId: string;
+  action: string;
+  entityType: string | null;
+  entityId: string | null;
+  metadata: Record<string, unknown> | null;
+  ip: string | null;
+  userAgent: string | null;
+  createdAt: string;
+  user: { id: string; name: string; email: string } | null;
+}
+
+export interface ListAuditLogsQuery {
+  page?: number;
+  limit?: number;
+  action?: string;
+  userId?: string;
+  search?: string;
 }
 
 export interface TypeStat {

@@ -9,6 +9,7 @@ import { requestLogger } from './common/request-logger';
 import authRoutes from './modules/auth/auth.routes';
 import usersRoutes from './modules/users/users.routes';
 import { adminFilesRouter, filesRouter } from './modules/files/files.routes';
+import auditRoutes from './modules/audit/audit.routes';
 import statsRoutes from './modules/stats/stats.routes';
 import { swaggerRouter } from './docs/swagger.routes';
 
@@ -33,6 +34,7 @@ apiRouter.use('/auth', authRoutes);
 apiRouter.use('/users', usersRoutes);
 apiRouter.use('/files', filesRouter);
 apiRouter.use('/admin/files', adminFilesRouter);
+apiRouter.use('/admin/audit-logs', auditRoutes);
 apiRouter.use('/stats', statsRoutes);
 apiRouter.use('/', swaggerRouter);
 

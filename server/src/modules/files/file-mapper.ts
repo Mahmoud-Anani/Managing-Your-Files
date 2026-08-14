@@ -10,6 +10,7 @@ export interface SafeFileDto {
   url: string;
   userId: string;
   createdAt: Date;
+  deletedAt: Date | null;
 }
 
 export interface FileDetailDto extends SafeFileDto {
@@ -27,6 +28,7 @@ export function toSafeFileDto(file: File): SafeFileDto {
     url: file.url,
     userId: file.userId,
     createdAt: file.createdAt,
+    deletedAt: file.deletedAt,
   };
 }
 

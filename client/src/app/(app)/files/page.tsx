@@ -9,10 +9,12 @@ import {
   Trash2,
   UploadCloud,
   FileText,
+  Eye,
+  Download,
   Image as ImageIcon,
 } from "lucide-react";
 
-import { api, formatBytes, formatDate } from "@/lib/api";
+import { api, fetchFileBlob, formatBytes, formatDate } from "@/lib/api";
 import { queryKeys, useFiles } from "@/hooks/use-queries";
 import type { FileSortBy, SafeFileDto, SortOrder } from "@/types";
 
@@ -33,6 +35,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { FilePreviewDialog } from "@/components/files/file-preview-dialog";
 import { useToast } from "@/components/ui/toast";
 
 const PAGE_SIZE = 10;
@@ -58,6 +61,7 @@ export default function FilesPage() {
   const [sortBy, setSortBy] = useState<FileSortBy>("createdAt");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [deleteTarget, setDeleteTarget] = useState<SafeFileDto | null>(null);
+  const [previewTarget, setPreviewTarget] = useState<SafeFileDto | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -158,7 +162,7 @@ export default function FilesPage() {
     },
 
     onSuccess: () => {
-      toast(t("files.deleted"), "success");
+      toast(t("files.movedToTrash"), "success");
 
       queryClient.invalidateQueries({
         queryKey: ["user-stats"],
@@ -167,11 +171,35 @@ export default function FilesPage() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.files(query),
       });
+
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.trash({}),
+      });
     },
 
     onError: (error: unknown) => {
       toast(
         error instanceof Error ? error.message : t("files.deleteFailed"),
+        "error",
+      );
+    },
+  });
+
+  const downloadMutation = useMutation({
+    mutationFn: async (file: SafeFileDto) => {
+      const blob = await fetchFileBlob(file.id, "download");
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = file.originalName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    },
+    onError: (error: unknown) => {
+      toast(
+        error instanceof Error ? error.message : t("files.downloadFailed"),
         "error",
       );
     },
@@ -206,12 +234,21 @@ export default function FilesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {t("files.title")}
-        </h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {t("files.title")}
+          </h1>
 
-        <p className="text-sm text-muted-foreground">{t("files.subtitle")}</p>
+          <p className="text-sm text-muted-foreground">{t("files.subtitle")}</p>
+        </div>
+
+        <Link href="/files/trash">
+          <Button variant="outline" size="sm">
+            <Trash2 className="me-2 size-4" />
+            {t("files.trash")}
+          </Button>
+        </Link>
       </div>
 
       {/* Upload */}
@@ -351,6 +388,26 @@ export default function FilesPage() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label={t("files.previewLabel", {
+                              name: file.originalName,
+                            })}
+                            onClick={() => setPreviewTarget(file)}
+                          >
+                            <Eye className="size-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={t("files.downloadLabel", {
+                              name: file.originalName,
+                            })}
+                            onClick={() => downloadMutation.mutate(file)}
+                          >
+                            <Download className="size-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             aria-label={t("files.deleteLabel", {
                               name: file.originalName,
                             })}
@@ -386,7 +443,7 @@ export default function FilesPage() {
           }
         }}
         title={t("files.deleteTitle")}
-        description={t("files.deleteConfirm", {
+        description={t("files.deleteConfirmTrash", {
           name: deleteTarget?.originalName,
         })}
         confirmLabel={t("common.delete")}
@@ -394,6 +451,16 @@ export default function FilesPage() {
         onConfirm={() => {
           if (deleteTarget) {
             return deleteMutation.mutateAsync(deleteTarget.id);
+          }
+        }}
+      />
+
+      <FilePreviewDialog
+        file={previewTarget}
+        open={Boolean(previewTarget)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPreviewTarget(null);
           }
         }}
       />

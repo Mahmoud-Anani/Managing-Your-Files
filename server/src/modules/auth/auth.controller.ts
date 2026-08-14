@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { getAuthUser } from '../../common/guards';
 import { AuthService } from './auth.service';
+import type { AuditContext } from '../audit/audit.service';
 import type {
   LoginDto,
   RegisterDto,
@@ -10,12 +11,22 @@ import type {
 
 const authService = new AuthService();
 
+function auditContextFrom(req: Request): AuditContext {
+  return {
+    ip: req.ip,
+    userAgent: req.get('user-agent'),
+  };
+}
+
 export class AuthController {
   async register(
     req: Request<unknown, unknown, RegisterDto>,
     res: Response,
   ): Promise<void> {
-    const result = await authService.register(req.body);
+    const result = await authService.register(
+      req.body,
+      auditContextFrom(req as Request),
+    );
     res.status(201).json(result);
   }
 
@@ -39,7 +50,10 @@ export class AuthController {
     req: Request<unknown, unknown, LoginDto>,
     res: Response,
   ): Promise<void> {
-    const result = await authService.login(req.body);
+    const result = await authService.login(
+      req.body,
+      auditContextFrom(req as Request),
+    );
     res.json(result);
   }
 

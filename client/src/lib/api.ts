@@ -80,3 +80,28 @@ export function formatDate(iso: string): string {
     day: "numeric",
   });
 }
+
+export async function fetchFileBlob(
+  fileId: string,
+  mode: "download" | "preview",
+): Promise<Blob> {
+  const { data } = await api.get<Blob>(`/files/${fileId}/${mode}`, {
+    responseType: "blob",
+  });
+  return data;
+}
+
+export function isImageMime(mimeType: string): boolean {
+  return mimeType.startsWith("image/");
+}
+
+export function isPdfMime(mimeType: string): boolean {
+  return mimeType === "application/pdf";
+}
+
+export function isTextPreviewable(mimeType: string, extension: string): boolean {
+  return (
+    mimeType.startsWith("text/") ||
+    ["json", "xml", "log", "csv", "md"].includes(extension.toLowerCase())
+  );
+}

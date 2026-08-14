@@ -3,7 +3,10 @@ import { prisma } from '../../config/prisma';
 import { NotFoundError, ValidationError } from '../../common/errors';
 import { paginate, type PaginatedResult } from '../../common/pagination';
 import { toSafeUserDto, type SafeUserDto } from '../../common/user-mapper';
+import { AuditService, type AuditContext } from '../audit/audit.service';
 import type { ListUsersQueryDto } from './users.dto';
+
+const auditService = new AuditService();
 
 export class UsersService {  async list(query: ListUsersQueryDto): Promise<PaginatedResult<SafeUserDto>> {
     const { page, limit, search, role, sortBy, sortOrder } = query;
@@ -43,6 +46,7 @@ export class UsersService {  async list(query: ListUsersQueryDto): Promise<Pagin
     actor: User,
     targetUserId: string,
     role: Role,
+    ctx?: AuditContext,
   ): Promise<SafeUserDto> {
     if (actor.id === targetUserId) {
       throw new ValidationError('You cannot change your own role');
@@ -57,12 +61,23 @@ export class UsersService {  async list(query: ListUsersQueryDto): Promise<Pagin
       where: { id: targetUserId },
       data: { role },
     });
+
+    await auditService.log({
+      userId: actor.id,
+      action: 'USER_ROLE_CHANGED',
+      entityType: 'USER',
+      entityId: targetUserId,
+      metadata: { email: target.email, from: target.role, to: role },
+      ctx,
+    });
+
     return toSafeUserDto(updated);
   }
 
   async deleteUser(
     actor: User,
     targetUserId: string,
+    ctx?: AuditContext,
   ): Promise<{ message: string }> {
     if (actor.id === targetUserId) {
       throw new ValidationError('You cannot delete your own account');
@@ -74,6 +89,16 @@ export class UsersService {  async list(query: ListUsersQueryDto): Promise<Pagin
     }
 
     await prisma.user.delete({ where: { id: targetUserId } });
+
+    await auditService.log({
+      userId: actor.id,
+      action: 'USER_DELETED',
+      entityType: 'USER',
+      entityId: targetUserId,
+      metadata: { email: target.email, name: target.name },
+      ctx,
+    });
+
     return { message: 'User deleted successfully' };
   }
 }

@@ -14,10 +14,13 @@ import {
   type SafeFileDto,
 } from './file-mapper';
 import { extractText } from './text-extractor';
+import { AuditService, type AuditContext } from '../audit/audit.service';
 import type {
   AdminListFilesQueryDto,
   ListFilesQueryDto,
 } from './files.dto';
+
+const auditService = new AuditService();
 
 function fileOrderBy(
   sortBy: 'createdAt' | 'name' | 'size',
@@ -41,10 +44,21 @@ async function removeStoredFile(publicId: string): Promise<void> {
   }
 }
 
+async function findFile(fileId: string, includeDeleted: boolean): Promise<File> {
+  const file = await prisma.file.findFirst({
+    where: includeDeleted ? { id: fileId } : { id: fileId, deletedAt: null },
+  });
+  if (!file) {
+    throw new NotFoundError('File not found');
+  }
+  return file;
+}
+
 export class FilesService {
   async upload(
     user: User,
     files: Array<Express.Multer.File>,
+    ctx?: AuditContext,
   ): Promise<SafeFileDto[]> {
     const records = await Promise.all(
       files.map(async (file) => {
@@ -82,6 +96,17 @@ export class FilesService {
       }),
     );
 
+    for (const record of records) {
+      await auditService.log({
+        userId: user.id,
+        action: 'FILE_UPLOAD',
+        entityType: 'FILE',
+        entityId: record.id,
+        metadata: { name: record.originalName, size: record.size },
+        ctx,
+      });
+    }
+
     return records.map(toSafeFileDto);
   }
 
@@ -115,29 +140,159 @@ export class FilesService {
     return paginate(files.map(toSafeFileDto), total, page, limit);
   }
 
-  async getById(user: User, fileId: string): Promise<FileDetailDto> {
-    const file = await prisma.file.findFirst({
-      where: { id: fileId, deletedAt: null },
-    });
-    if (!file) {
-      throw new NotFoundError('File not found');
+  async listTrash(
+    user: User,
+    query: ListFilesQueryDto,
+  ): Promise<PaginatedResult<SafeFileDto>> {
+    const { page, limit, search, type, sortBy, sortOrder } = query;
+
+    const where: Prisma.FileWhereInput = {
+      userId: user.id,
+      deletedAt: { not: null },
+    };
+    if (search) {
+      where.originalName = { contains: search, mode: 'insensitive' };
     }
+    if (type) {
+      where.extension = type.toLowerCase();
+    }
+
+    const [files, total] = await prisma.$transaction([
+      prisma.file.findMany({
+        where,
+        orderBy: fileOrderBy(sortBy, sortOrder),
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.file.count({ where }),
+    ]);
+
+    return paginate(files.map(toSafeFileDto), total, page, limit);
+  }
+
+  async getById(user: User, fileId: string): Promise<FileDetailDto> {
+    const file = await findFile(fileId, false);
     this.assertCanAccess(file, user.id, user.role);
     return toFileDetailDto(file);
   }
 
-  async delete(user: User, fileId: string): Promise<{ message: string }> {
-    const file = await prisma.file.findFirst({
-      where: { id: fileId, deletedAt: null },
+  async getForDownload(
+    user: User,
+    fileId: string,
+    ctx?: AuditContext,
+  ): Promise<File> {
+    const file = await findFile(fileId, false);
+    this.assertCanAccess(file, user.id, user.role);
+
+    await auditService.log({
+      userId: user.id,
+      action: 'FILE_DOWNLOAD',
+      entityType: 'FILE',
+      entityId: file.id,
+      metadata: { name: file.originalName },
+      ctx,
     });
-    if (!file) {
+
+    return file;
+  }
+
+  async getForPreview(
+    user: User,
+    fileId: string,
+    ctx?: AuditContext,
+  ): Promise<File> {
+    const file = await findFile(fileId, false);
+    this.assertCanAccess(file, user.id, user.role);
+
+    await auditService.log({
+      userId: user.id,
+      action: 'FILE_PREVIEW',
+      entityType: 'FILE',
+      entityId: file.id,
+      metadata: { name: file.originalName },
+      ctx,
+    });
+
+    return file;
+  }
+
+  async delete(
+    user: User,
+    fileId: string,
+    ctx?: AuditContext,
+  ): Promise<{ message: string }> {
+    const file = await findFile(fileId, false);
+    this.assertCanAccess(file, user.id, user.role);
+
+    await prisma.file.update({
+      where: { id: fileId },
+      data: { deletedAt: new Date() },
+    });
+
+    await auditService.log({
+      userId: user.id,
+      action: 'FILE_SOFT_DELETE',
+      entityType: 'FILE',
+      entityId: file.id,
+      metadata: { name: file.originalName },
+      ctx,
+    });
+
+    return { message: 'File moved to trash' };
+  }
+
+  async restore(
+    user: User,
+    fileId: string,
+    ctx?: AuditContext,
+  ): Promise<SafeFileDto> {
+    const file = await findFile(fileId, true);
+    this.assertCanAccess(file, user.id, user.role);
+    if (!file.deletedAt) {
       throw new NotFoundError('File not found');
     }
+
+    const restored = await prisma.file.update({
+      where: { id: fileId },
+      data: { deletedAt: null },
+    });
+
+    await auditService.log({
+      userId: user.id,
+      action: 'FILE_RESTORE',
+      entityType: 'FILE',
+      entityId: file.id,
+      metadata: { name: file.originalName },
+      ctx,
+    });
+
+    return toSafeFileDto(restored);
+  }
+
+  async purge(
+    user: User,
+    fileId: string,
+    ctx?: AuditContext,
+  ): Promise<{ message: string }> {
+    const file = await findFile(fileId, true);
     this.assertCanAccess(file, user.id, user.role);
+    if (!file.deletedAt) {
+      throw new NotFoundError('File not found');
+    }
 
     await removeStoredFile(file.storedName);
     await prisma.file.delete({ where: { id: fileId } });
-    return { message: 'File deleted successfully' };
+
+    await auditService.log({
+      userId: user.id,
+      action: 'FILE_PERMANENT_DELETE',
+      entityType: 'FILE',
+      entityId: file.id,
+      metadata: { name: file.originalName },
+      ctx,
+    });
+
+    return { message: 'File permanently deleted' };
   }
 
   async adminList(
@@ -169,17 +324,109 @@ export class FilesService {
     return paginate(files.map(toSafeFileDto), total, page, limit);
   }
 
-  async adminDelete(fileId: string): Promise<{ message: string }> {
-    const file = await prisma.file.findFirst({
-      where: { id: fileId, deletedAt: null },
+  async adminListTrash(
+    query: AdminListFilesQueryDto,
+  ): Promise<PaginatedResult<SafeFileDto>> {
+    const { page, limit, search, type, sortBy, sortOrder, userId } = query;
+
+    const where: Prisma.FileWhereInput = { deletedAt: { not: null } };
+    if (search) {
+      where.originalName = { contains: search, mode: 'insensitive' };
+    }
+    if (type) {
+      where.extension = type.toLowerCase();
+    }
+    if (userId) {
+      where.userId = userId;
+    }
+
+    const [files, total] = await prisma.$transaction([
+      prisma.file.findMany({
+        where,
+        orderBy: fileOrderBy(sortBy, sortOrder),
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.file.count({ where }),
+    ]);
+
+    return paginate(files.map(toSafeFileDto), total, page, limit);
+  }
+
+  async adminDelete(
+    actor: User,
+    fileId: string,
+    ctx?: AuditContext,
+  ): Promise<{ message: string }> {
+    const file = await findFile(fileId, false);
+
+    await prisma.file.update({
+      where: { id: fileId },
+      data: { deletedAt: new Date() },
     });
-    if (!file) {
+
+    await auditService.log({
+      userId: actor.id,
+      action: 'FILE_SOFT_DELETE',
+      entityType: 'FILE',
+      entityId: file.id,
+      metadata: { name: file.originalName, ownerId: file.userId },
+      ctx,
+    });
+
+    return { message: 'File moved to trash' };
+  }
+
+  async adminRestore(
+    actor: User,
+    fileId: string,
+    ctx?: AuditContext,
+  ): Promise<SafeFileDto> {
+    const file = await findFile(fileId, true);
+    if (!file.deletedAt) {
+      throw new NotFoundError('File not found');
+    }
+
+    const restored = await prisma.file.update({
+      where: { id: fileId },
+      data: { deletedAt: null },
+    });
+
+    await auditService.log({
+      userId: actor.id,
+      action: 'FILE_RESTORE',
+      entityType: 'FILE',
+      entityId: file.id,
+      metadata: { name: file.originalName, ownerId: file.userId },
+      ctx,
+    });
+
+    return toSafeFileDto(restored);
+  }
+
+  async adminPurge(
+    actor: User,
+    fileId: string,
+    ctx?: AuditContext,
+  ): Promise<{ message: string }> {
+    const file = await findFile(fileId, true);
+    if (!file.deletedAt) {
       throw new NotFoundError('File not found');
     }
 
     await removeStoredFile(file.storedName);
     await prisma.file.delete({ where: { id: fileId } });
-    return { message: 'File deleted successfully' };
+
+    await auditService.log({
+      userId: actor.id,
+      action: 'FILE_PERMANENT_DELETE',
+      entityType: 'FILE',
+      entityId: file.id,
+      metadata: { name: file.originalName, ownerId: file.userId },
+      ctx,
+    });
+
+    return { message: 'File permanently deleted' };
   }
 
   private assertCanAccess(file: File, userId: string, role: Role): void {

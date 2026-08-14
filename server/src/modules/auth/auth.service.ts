@@ -12,12 +12,15 @@ import {
 import { generateOtpCode, OTP_TTL_MS } from '../../common/otp';
 import { sendVerificationEmail } from '../../common/email';
 import { toSafeUserDto, type SafeUserDto } from '../../common/user-mapper';
+import { AuditService, type AuditContext } from '../audit/audit.service';
 import type {
   LoginDto,
   RegisterDto,
   ResendCodeDto,
   VerifyEmailDto,
 } from './auth.dto';
+
+const auditService = new AuditService();
 
 interface RegisterResult {
   userId: string;
@@ -30,7 +33,10 @@ export interface AuthResponse {
 }
 
 export class AuthService {
-  async register(dto: RegisterDto): Promise<RegisterResult> {
+  async register(
+    dto: RegisterDto,
+    ctx?: AuditContext,
+  ): Promise<RegisterResult> {
     const existing = await prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -48,6 +54,15 @@ export class AuthService {
     });
 
     await this.issueVerificationCode(user.id, user.email);
+
+    await auditService.log({
+      userId: user.id,
+      action: 'USER_REGISTER',
+      entityType: 'USER',
+      entityId: user.id,
+      metadata: { email: user.email },
+      ctx,
+    });
 
     return { userId: user.id, email: user.email };
   }
@@ -102,7 +117,7 @@ export class AuthService {
     return { message: 'Verification code sent' };
   }
 
-  async login(dto: LoginDto): Promise<AuthResponse> {
+  async login(dto: LoginDto, ctx?: AuditContext): Promise<AuthResponse> {
     const user = await prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -121,6 +136,16 @@ export class AuthService {
     }
 
     const token = this.signToken(user);
+
+    await auditService.log({
+      userId: user.id,
+      action: 'USER_LOGIN',
+      entityType: 'USER',
+      entityId: user.id,
+      metadata: { email: user.email },
+      ctx,
+    });
+
     return { token, user: toSafeUserDto(user) };
   }
 

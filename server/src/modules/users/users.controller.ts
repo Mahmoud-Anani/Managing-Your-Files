@@ -4,12 +4,20 @@ import { ValidationError } from '../../common/errors';
 import type { SafeUserDto } from '../../common/user-mapper';
 import type { PaginatedResult } from '../../common/pagination';
 import { UsersService } from './users.service';
+import type { AuditContext } from '../audit/audit.service';
 import type {
   ListUsersQueryDto,
   UpdateUserRoleDto,
 } from './users.dto';
 
 const usersService = new UsersService();
+
+function auditContextFrom(req: Request): AuditContext {
+  return {
+    ip: req.ip,
+    userAgent: req.get('user-agent'),
+  };
+}
 
 export class UsersController {
   async list(req: Request, res: Response): Promise<void> {
@@ -25,7 +33,12 @@ export class UsersController {
       throw new ValidationError('User id is required');
     }
     const body = req.body as UpdateUserRoleDto;
-    const result = await usersService.updateRole(actor, id, body.role);
+    const result = await usersService.updateRole(
+      actor,
+      id,
+      body.role,
+      auditContextFrom(req),
+    );
     res.json(result);
   }
 
@@ -35,7 +48,7 @@ export class UsersController {
     if (!id) {
       throw new ValidationError('User id is required');
     }
-    const result = await usersService.deleteUser(actor, id);
+    const result = await usersService.deleteUser(actor, id, auditContextFrom(req));
     res.json(result);
   }
 }

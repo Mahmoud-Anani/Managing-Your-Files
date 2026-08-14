@@ -1,15 +1,68 @@
 import type { Request, Response } from 'express';
 import { getAuthUser } from '../../common/guards';
-import { ValidationError } from '../../common/errors';
+import { ValidationError, NotFoundError } from '../../common/errors';
 import { FilesService } from './files.service';
+import type { AuditContext } from '../audit/audit.service';
 import type { AdminListFilesQueryDto, ListFilesQueryDto } from './files.dto';
 
 const filesService = new FilesService();
 
+function auditContextFrom(req: Request): AuditContext {
+  return {
+    ip: req.ip,
+    userAgent: req.get('user-agent'),
+  };
+}
+
+function contentDisposition(
+  filename: string,
+  inline: boolean,
+): string {
+  const disposition = inline ? 'inline' : 'attachment';
+  return `${disposition}; filename*=UTF-8''${encodeURIComponent(filename)}; filename="${filename.replace(/["\\]/g, '')}"`;
+}
+
+async function streamCloudinary(
+  req: Request,
+  res: Response,
+  id: string,
+  inline: boolean,
+): Promise<void> {
+  const user = getAuthUser(req);
+  const file = inline
+    ? await filesService.getForPreview(user, id, auditContextFrom(req))
+    : await filesService.getForDownload(user, id, auditContextFrom(req));
+
+  const upstream = await fetch(file.url);
+  if (!upstream.ok || !upstream.body) {
+    throw new NotFoundError('File unavailable');
+  }
+
+  res.setHeader('Content-Type', file.mimeType);
+  res.setHeader('Content-Disposition', contentDisposition(file.originalName, inline));
+  res.setHeader('Cache-Control', 'private, no-store');
+  res.status(200);
+
+  const reader = upstream.body.getReader();
+
+  const pump = (): Promise<void> =>
+    reader.read().then(({ done, value }) => {
+      if (done) {
+        res.end();
+        return;
+      }
+      res.write(Buffer.from(value));
+      return pump();
+    });
+
+  res.on('close', () => {
+    void reader.cancel();
+  });
+
+  await pump();
+}
+
 export class FilesController {
-  //  @docs   Can Only User Logged upload files
-  //  @Route  POST /api/v1/files
-  //  @access Private [User]
   async upload(req: Request, res: Response): Promise<void> {
     const user = getAuthUser(req);
 
@@ -17,7 +70,7 @@ export class FilesController {
     if (!files || files.length === 0) {
       throw new ValidationError('At least one file is required');
     }
-    const result = await filesService.upload(user, files);
+    const result = await filesService.upload(user, files, auditContextFrom(req));
     res.status(201).json(result);
   }
 
@@ -25,6 +78,13 @@ export class FilesController {
     const user = getAuthUser(req);
     const query = req.query as unknown as ListFilesQueryDto;
     const result = await filesService.listOwn(user, query);
+    res.json(result);
+  }
+
+  async trash(req: Request, res: Response): Promise<void> {
+    const user = getAuthUser(req);
+    const query = req.query as unknown as ListFilesQueryDto;
+    const result = await filesService.listTrash(user, query);
     res.json(result);
   }
 
@@ -44,8 +104,44 @@ export class FilesController {
     if (!id) {
       throw new ValidationError('File id is required');
     }
-    const result = await filesService.delete(user, id);
+    const result = await filesService.delete(user, id, auditContextFrom(req));
     res.json(result);
+  }
+
+  async restore(req: Request, res: Response): Promise<void> {
+    const user = getAuthUser(req);
+    const id = req.params.id;
+    if (!id) {
+      throw new ValidationError('File id is required');
+    }
+    const result = await filesService.restore(user, id, auditContextFrom(req));
+    res.json(result);
+  }
+
+  async purge(req: Request, res: Response): Promise<void> {
+    const user = getAuthUser(req);
+    const id = req.params.id;
+    if (!id) {
+      throw new ValidationError('File id is required');
+    }
+    const result = await filesService.purge(user, id, auditContextFrom(req));
+    res.json(result);
+  }
+
+  async download(req: Request, res: Response): Promise<void> {
+    const id = req.params.id;
+    if (!id) {
+      throw new ValidationError('File id is required');
+    }
+    await streamCloudinary(req, res, id, false);
+  }
+
+  async preview(req: Request, res: Response): Promise<void> {
+    const id = req.params.id;
+    if (!id) {
+      throw new ValidationError('File id is required');
+    }
+    await streamCloudinary(req, res, id, true);
   }
 
   async adminList(req: Request, res: Response): Promise<void> {
@@ -54,12 +150,39 @@ export class FilesController {
     res.json(result);
   }
 
+  async adminTrash(req: Request, res: Response): Promise<void> {
+    const query = req.query as unknown as AdminListFilesQueryDto;
+    const result = await filesService.adminListTrash(query);
+    res.json(result);
+  }
+
   async adminRemove(req: Request, res: Response): Promise<void> {
+    const actor = getAuthUser(req);
     const id = req.params.id;
     if (!id) {
       throw new ValidationError('File id is required');
     }
-    const result = await filesService.adminDelete(id);
+    const result = await filesService.adminDelete(actor, id, auditContextFrom(req));
+    res.json(result);
+  }
+
+  async adminRestore(req: Request, res: Response): Promise<void> {
+    const actor = getAuthUser(req);
+    const id = req.params.id;
+    if (!id) {
+      throw new ValidationError('File id is required');
+    }
+    const result = await filesService.adminRestore(actor, id, auditContextFrom(req));
+    res.json(result);
+  }
+
+  async adminPurge(req: Request, res: Response): Promise<void> {
+    const actor = getAuthUser(req);
+    const id = req.params.id;
+    if (!id) {
+      throw new ValidationError('File id is required');
+    }
+    const result = await filesService.adminPurge(actor, id, auditContextFrom(req));
     res.json(result);
   }
 }
