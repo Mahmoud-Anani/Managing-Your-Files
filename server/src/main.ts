@@ -49,6 +49,9 @@ async function start(): Promise<void> {
     await prisma.$connect();
     app.listen(env.PORT, () => {
       console.warn(`Server running on http://localhost:${env.PORT}`);
+      console.warn(
+        `Docs Swagger Server running on http://localhost:${env.PORT}/api/v1/docs`,
+      );
     });
   } catch (error) {
     console.error('Failed to start server', error);

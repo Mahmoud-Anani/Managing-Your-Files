@@ -16,6 +16,7 @@ export class FilesController {
   async upload(req: Request, res: Response): Promise<void> {
     const user = getAuthUser(req);
     const files = req.files as Express.Multer.File[] | undefined;
+    console.log('Files received:', files); // Debugging line to check the files received
     if (!files || files.length === 0) {
       throw new ValidationError('At least one file is required');
     }
