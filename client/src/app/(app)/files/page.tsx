@@ -92,20 +92,23 @@ export default function FilesPage() {
   const uploadMutation = useMutation({
     mutationFn: async (files: File[]) => {
       if (files.length === 0) {
-        throw new Error("Please select at least one image.");
+        throw new Error(t("files.selectAtLeastOne"));
       }
 
       // Validate files before sending them
       for (const file of files) {
         if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
           throw new Error(
-            `Unsupported file type: ${file.name}. Please select JPG, PNG, WEBP, or GIF.`,
+            t("files.unsupportedType", { name: file.name }),
           );
         }
 
         if (file.size > MAX_FILE_SIZE) {
           throw new Error(
-            `${file.name} is too large. Maximum file size is 10 MB.`,
+            t("files.tooLarge", {
+              name: file.name,
+              max: MAX_FILE_SIZE / (1024 * 1024),
+            }),
           );
         }
       }
@@ -429,7 +432,7 @@ function UploadCard({
           </p>
 
           <p className="mt-1 text-xs text-muted-foreground">
-            JPG, PNG, WEBP, GIF — Max 10 MB
+            {t("files.maxSizeHint", { max: MAX_FILE_SIZE / (1024 * 1024) })}
           </p>
         </div>
 
