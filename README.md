@@ -4,11 +4,10 @@ A full-stack file management platform: register, verify your email, upload up to
 
 The repo is a monorepo with two applications:
 
-| Directory | What it is | Stack |
-|-----------|------------|-------|
-| `server/` | REST API | Node.js, Express 4, TypeScript, Prisma ORM, PostgreSQL, JWT, Multer, Nodemailer, Swagger |
+| Directory | What it is      | Stack                                                                                                                   |
+| --------- | --------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `server/` | REST API        | Node.js, Express 4, TypeScript, Prisma ORM, PostgreSQL, JWT, Multer, Nodemailer, Swagger                                |
 | `client/` | Web application | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, TanStack Query, i18next (EN/AR), Framer Motion, Recharts |
-| `storage/` | Uploaded-file store | Files written to disk by Multer, served statically at `/uploads` |
 
 ---
 
@@ -20,7 +19,7 @@ The repo is a monorepo with two applications:
 - **File management** — paginated list with search-by-name, extension filter, and sorting by name, size or upload date; delete with confirmation.
 - **Storage dashboard** — stat cards for total files, storage used and uploads; distribution by file type and a daily-upload bar chart (7/14/30-day windows).
 - **Admin panel** — platform-wide stats, most-uploaded types, 10 most recent uploads, user management (search, role filter, role changes, delete), and deletion of any file.
-- **Internationalization** — English and Arabic with automatic RTL switching; theme (light/dark/system) and language preferences persisted in local storage.
+- **Internationalization** — English and Arabic with automatic RTL switching; theme (light/dark/system) and language preferences persisted in cloudinary.
 - **Self-documented API** — interactive Swagger UI generated from a hand-written OpenAPI 3.0 spec.
 
 ---
@@ -30,10 +29,10 @@ The repo is a monorepo with two applications:
 ### Server
 
 - **Express 4 + TypeScript** — layered modules: routes → middleware → controllers → services → Prisma.
-- **Prisma ORM** against **PostgreSQL** (development can use an embedded PostgreSQL instance, see *Development database*).
+- **Prisma ORM** against **PostgreSQL** (development can use an embedded PostgreSQL instance, see _Development database_).
 - **JWT** bearer authentication (`jsonwebtoken`) with bcrypt password hashing (12 rounds).
 - **Zod** schemas used for runtime validation of request bodies and query strings.
-- **Multer** disk storage — files are renamed to a UUID before being written to `storage/`.
+- **Multer** disk storage — files are renamed to a UUID before being written to cloudinary.
 - **Nodemailer** SMTP transport for verification emails.
 - **pdf-parse** for PDF text extraction.
 - **Swagger UI Express** served from the spec in `server/src/docs/openapi.ts`.
@@ -108,29 +107,29 @@ The client runs at `http://localhost:3002`.
 
 ### Server (`server/.env`)
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `NODE_ENV` | no | `development` | `development` \| `test` \| `production` |
-| `PORT` | no | `8080` | API port |
-| `CLIENT_ORIGIN` | no | `http://localhost:3002` | CORS origin in production |
-| `DATABASE_URL` | **yes** | — | PostgreSQL connection string |
-| `JWT_SECRET` | **yes** | — | At least 16 characters |
-| `JWT_EXPIRES_IN` | no | `7d` | Token lifetime (e.g. `7d`, `30m`) |
-| `ADMIN_EMAIL` | no | `admin@example.com` | Seed admin email |
-| `ADMIN_NAME` | no | `Admin` | Seed admin name |
-| `ADMIN_PASSWORD` | no | `Admin123` | Seed admin password (min 8 chars + a number) |
-| `GMAIL_USER` / `GMAIL_PASS` | no | empty | SMTP credentials; when empty, verification codes are logged to the console |
-| `SMTP_HOST` / `SMTP_PORT` | no | `smtp.gmail.com` / `587` | SMTP server |
-| `EMAIL_FROM` | no | `Managing Your Files <no-reply@example.com>` | Sender address |
-| `MAX_FILE_SIZE_MB` | no | `25` | Per-file upload limit (1–100 MB) |
+| Variable                    | Required | Default                                      | Description                                                                |
+| --------------------------- | -------- | -------------------------------------------- | -------------------------------------------------------------------------- |
+| `NODE_ENV`                  | no       | `development`                                | `development` \| `test` \| `production`                                    |
+| `PORT`                      | no       | `8080`                                       | API port                                                                   |
+| `CLIENT_ORIGIN`             | no       | `http://localhost:3002`                      | CORS origin in production                                                  |
+| `DATABASE_URL`              | **yes**  | —                                            | PostgreSQL connection string                                               |
+| `JWT_SECRET`                | **yes**  | —                                            | At least 16 characters                                                     |
+| `JWT_EXPIRES_IN`            | no       | `7d`                                         | Token lifetime (e.g. `7d`, `30m`)                                          |
+| `ADMIN_EMAIL`               | no       | `admin@example.com`                          | Seed admin email                                                           |
+| `ADMIN_NAME`                | no       | `Admin`                                      | Seed admin name                                                            |
+| `ADMIN_PASSWORD`            | no       | `Admin123`                                   | Seed admin password (min 8 chars + a number)                               |
+| `GMAIL_USER` / `GMAIL_PASS` | no       | empty                                        | SMTP credentials; when empty, verification codes are logged to the console |
+| `SMTP_HOST` / `SMTP_PORT`   | no       | `smtp.gmail.com` / `587`                     | SMTP server                                                                |
+| `EMAIL_FROM`                | no       | `Managing Your Files <no-reply@example.com>` | Sender address                                                             |
+| `MAX_FILE_SIZE_MB`          | no       | `25`                                         | Per-file upload limit (1–100 MB)                                           |
 
 > `DATABASE_URL` and `JWT_SECRET` are validated at boot — the server refuses to start without them.
 
 ### Client (`client/.env.local`)
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `NEXT_PUBLIC_API_URL` | no | `http://localhost:8080` | Base URL of the API; set it to `http://localhost:3001` to match the server config |
+| Variable              | Required | Default                 | Description                                                                       |
+| --------------------- | -------- | ----------------------- | --------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_API_URL` | no       | `http://localhost:8080` | Base URL of the API; set it to `http://localhost:3001` to match the server config |
 
 ---
 
@@ -173,7 +172,6 @@ Managing-Your-Files/
 │           ├── users/             # admin user management
 │           ├── files/             # upload, list, detail, delete + admin files
 │           └── stats/             # user & admin statistics
-└── storage/                       # uploaded files (served at /uploads)
 ```
 
 ---
@@ -182,25 +180,25 @@ Managing-Your-Files/
 
 All endpoints are mounted under the `/api/v1` prefix. Interactive docs: `GET /api/v1/docs` (Swagger UI) and `GET /api/v1/docs.json` (raw spec).
 
-| Method | Path | Access | Description |
-|--------|------|--------|-------------|
-| `POST` | `/auth/register` | public | Create account; emails a 6-digit verification code |
-| `POST` | `/auth/verify-email` | public | Verify email with the code (idempotent) |
-| `POST` | `/auth/resend-code` | public | Issue a fresh code (60s cooldown) |
-| `POST` | `/auth/login` | public | Log in; returns `{ token, user }` |
-| `GET` | `/auth/profile` | user | Current profile |
-| `GET` | `/users` | admin | Paginated user list (search/role/sort) |
-| `PATCH` | `/users/:id` | admin | Change a user's role (not your own) |
-| `DELETE` | `/users/:id` | admin | Delete a user (cascade removes files) |
-| `POST` | `/files/upload` | user | Upload up to 10 files (`multipart/form-data`, field `files`) |
-| `GET` | `/files` | user | List own files (search/type filter/sort) |
-| `GET` | `/files/:id` | user | File details + extracted text |
-| `DELETE` | `/files/:id` | user | Delete own file (also from disk) |
-| `GET` | `/admin/files` | admin | List all files (optional `userId` filter) |
-| `DELETE` | `/admin/files/:id` | admin | Delete any file |
-| `GET` | `/stats/user` | user | Total files, storage bytes, type breakdown, daily uploads |
-| `GET` | `/stats/admin` | admin | Platform-wide stats + 10 most recent uploads |
-| `GET` | `/health` | public | Liveness probe (`{ status: "ok" }`) |
+| Method   | Path                 | Access | Description                                                  |
+| -------- | -------------------- | ------ | ------------------------------------------------------------ |
+| `POST`   | `/auth/register`     | public | Create account; emails a 6-digit verification code           |
+| `POST`   | `/auth/verify-email` | public | Verify email with the code (idempotent)                      |
+| `POST`   | `/auth/resend-code`  | public | Issue a fresh code (60s cooldown)                            |
+| `POST`   | `/auth/login`        | public | Log in; returns `{ token, user }`                            |
+| `GET`    | `/auth/profile`      | user   | Current profile                                              |
+| `GET`    | `/users`             | admin  | Paginated user list (search/role/sort)                       |
+| `PATCH`  | `/users/:id`         | admin  | Change a user's role (not your own)                          |
+| `DELETE` | `/users/:id`         | admin  | Delete a user (cascade removes files)                        |
+| `POST`   | `/files/upload`      | user   | Upload up to 10 files (`multipart/form-data`, field `files`) |
+| `GET`    | `/files`             | user   | List own files (search/type filter/sort)                     |
+| `GET`    | `/files/:id`         | user   | File details + extracted text                                |
+| `DELETE` | `/files/:id`         | user   | Delete own file (also from disk)                             |
+| `GET`    | `/admin/files`       | admin  | List all files (optional `userId` filter)                    |
+| `DELETE` | `/admin/files/:id`   | admin  | Delete any file                                              |
+| `GET`    | `/stats/user`        | user   | Total files, storage bytes, type breakdown, daily uploads    |
+| `GET`    | `/stats/admin`       | admin  | Platform-wide stats + 10 most recent uploads                 |
+| `GET`    | `/health`            | public | Liveness probe (`{ status: "ok" }`)                          |
 
 Protected endpoints expect `Authorization: Bearer <token>`. Uploaded files are downloadable at `http://localhost:3001/uploads/<storedName>`.
 
@@ -212,14 +210,14 @@ Errors are returned as JSON with a `statusCode`, `message` and an optional `erro
 { "statusCode": 404, "message": "File not found", "error": "NotFoundError" }
 ```
 
-| Error | Status |
-|-------|--------|
-| `ValidationError` (incl. Zod, Multer limits) | 400 |
-| `UnauthorizedError` | 401 |
-| `ForbiddenError` | 403 |
-| `NotFoundError` | 404 |
-| `ConflictError` (incl. Prisma `P2002`) | 409 |
-| Unknown / Prisma `P2025` | 500 / 404 |
+| Error                                        | Status    |
+| -------------------------------------------- | --------- |
+| `ValidationError` (incl. Zod, Multer limits) | 400       |
+| `UnauthorizedError`                          | 401       |
+| `ForbiddenError`                             | 403       |
+| `NotFoundError`                              | 404       |
+| `ConflictError` (incl. Prisma `P2002`)       | 409       |
+| Unknown / Prisma `P2025`                     | 500 / 404 |
 
 ---
 
@@ -402,14 +400,14 @@ classDiagram
 
 ### 3. Runtime architecture
 
-The client (Next.js) talks to the Express API through a single Axios instance. The request pipeline is: middleware → controller → service → Prisma. Files written to `storage/` are served back statically under `/uploads`.
+The client (Next.js) talks to the Express API through a single Axios instance. The request pipeline is: middleware → controller → service → Prisma. Files written to cloudinary are served back statically under cloudinary.
 
 ```mermaid
 flowchart LR
     subgraph Client["Next.js client (:3002)"]
         P[App Router pages] --> H[TanStack Query hooks]
         H --> A[lib/api.ts Axios instance<br/>injects Bearer token]
-        P --> C[AuthProvider / I18nProvider<br/>localStorage session + locale]
+        P --> C[AuthProvider / I18nProvider<br/>cloudinary]
     end
 
     subgraph Server["Express API (:3001)"]
@@ -418,7 +416,7 @@ flowchart LR
         CT --> SV[Services]
         SV --> PR[Prisma Client]
         PR --> DB[(PostgreSQL)]
-        SV --> ST[storage/ on disk<br/>written by Multer]
+        SV --> ST[cloudinary]
         ST -->|static /uploads| A
     end
 ```
@@ -473,7 +471,7 @@ sequenceDiagram
     participant FS as FilesService
     participant TX as TextExtractor
     participant DB as Prisma / PostgreSQL
-    participant ST as storage/ (disk)
+    participant ST as cloudinary
 
     U->>GW: POST /files/upload (multipart, field "files")
     GW->>GW: authGuard verifies JWT
@@ -490,13 +488,13 @@ sequenceDiagram
 
 ### 6. Ownership & authorization matrix
 
-| Action | USER | ADMIN |
-|--------|:----:|:-----:|
-| Browse / upload own files | ✅ | ✅ |
-| Read / delete **own** files | ✅ | ✅ |
-| Read / delete **any** file | ❌ (403) | ✅ |
-| List users / change roles / delete users | ❌ (403) | ✅ |
-| View platform-wide stats | ❌ (403) | ✅ |
+| Action                                   |   USER   | ADMIN |
+| ---------------------------------------- | :------: | :---: |
+| Browse / upload own files                |    ✅    |  ✅   |
+| Read / delete **own** files              |    ✅    |  ✅   |
+| Read / delete **any** file               | ❌ (403) |  ✅   |
+| List users / change roles / delete users | ❌ (403) |  ✅   |
+| View platform-wide stats                 | ❌ (403) |  ✅   |
 
 Enforcement happens in two places: `authGuard` (valid JWT + existing user) and `roleGuard(Role.ADMIN)` on admin routes, plus `FilesService.assertCanAccess` which compares `file.userId` with the requester's id for non-admin access.
 
@@ -506,28 +504,28 @@ Enforcement happens in two places: `authGuard` (valid JWT + existing user) and `
 
 ### Server (`cd server`)
 
-| Command | Description |
-|---------|-------------|
-| `npm run start:dev` | Run API in watch mode (`ts-node-dev`) |
-| `npm run build` | Compile TypeScript to `dist/` |
-| `npm run start` | Run compiled output |
-| `npm run typecheck` | Type-check the whole project (incl. scripts, prisma) |
-| `npm run lint` / `npm run lint:fix` | ESLint |
-| `npm run format` | Prettier |
-| `npm run dev:db` | Start embedded PostgreSQL (Windows) |
-| `npm run prisma:generate` | Generate the Prisma client |
-| `npm run prisma:migrate` | Create/apply dev migrations |
-| `npm run prisma:deploy` | Apply migrations without prompting |
-| `npm run seed` | Create the ADMIN user from env vars |
+| Command                             | Description                                          |
+| ----------------------------------- | ---------------------------------------------------- |
+| `npm run start:dev`                 | Run API in watch mode (`ts-node-dev`)                |
+| `npm run build`                     | Compile TypeScript to `dist/`                        |
+| `npm run start`                     | Run compiled output                                  |
+| `npm run typecheck`                 | Type-check the whole project (incl. scripts, prisma) |
+| `npm run lint` / `npm run lint:fix` | ESLint                                               |
+| `npm run format`                    | Prettier                                             |
+| `npm run dev:db`                    | Start embedded PostgreSQL (Windows)                  |
+| `npm run prisma:generate`           | Generate the Prisma client                           |
+| `npm run prisma:migrate`            | Create/apply dev migrations                          |
+| `npm run prisma:deploy`             | Apply migrations without prompting                   |
+| `npm run seed`                      | Create the ADMIN user from env vars                  |
 
 ### Client (`cd client`)
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start dev server on `http://localhost:3002` |
-| `npm run build` | Production build |
-| `npm run start` | Serve the production build |
-| `npm run lint` | ESLint |
+| Command         | Description                                 |
+| --------------- | ------------------------------------------- |
+| `npm run dev`   | Start dev server on `http://localhost:3002` |
+| `npm run build` | Production build                            |
+| `npm run start` | Serve the production build                  |
+| `npm run lint`  | ESLint                                      |
 
 ---
 
