@@ -1,0 +1,387 @@
+{
+  "brand": "Managing Your Files",
+  "common": {
+    "logIn": "Log in",
+    "logOut": "Sign out",
+    "signUp": "Create account",
+    "search": "Search",
+    "retry": "Retry",
+    "back": "Back",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "open": "Open",
+    "uploading": "Uploading…",
+    "chooseFiles": "Choose files",
+    "verifyEmail": "Verify email",
+    "resendCode": "Resend code",
+    "resendIn": "Resend in {{count}}s",
+    "email": "Email",
+    "emailPlaceholder": "you@example.com",
+    "password": "Password",
+    "passwordPlaceholder": "Your password",
+    "fullName": "Full name",
+    "namePlaceholder": "Jane Doe",
+    "confirmPassword": "Confirm password",
+    "confirmPasswordPlaceholder": "Repeat your password",
+    "verificationCode": "Verification code",
+    "codePlaceholder": "123456",
+    "errorGeneric": "Something went wrong. Please try again.",
+    "pagination": "Pagination",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "showingPage": "Showing page {{page}} of {{totalPages}} ({{total}} items)",
+    "dismissNotification": "Dismiss notification",
+    "close": "Close",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "theme": "Theme",
+    "language": "Language"
+  },
+  "validation": {
+    "invalidEmail": "Enter a valid email address",
+    "passwordRequired": "Password is required",
+    "nameRequired": "Name is required",
+    "nameTooLong": "Name is too long",
+    "passwordMin": "Password must be at least 8 characters",
+    "confirmPasswordRequired": "Please confirm your password",
+    "passwordsMismatch": "Passwords do not match",
+    "codeLength": "Code must be 6 digits",
+    "codeDigits": "Code must be digits"
+  },
+  "home": {
+    "title": "Managing Your Files",
+    "subtitle": "Upload, organize and explore your files. Register to get started.",
+    "getStarted": "Get started",
+    "logIn": "Log in"
+  },
+  "auth": {
+    "loginTitle": "Log in",
+    "loginDescription": "Access your files with your account.",
+    "emailVerified": "Your email is verified. You can now log in.",
+    "noAccount": "No account?",
+    "createOne": "Create one",
+    "registerTitle": "Create your account",
+    "registerDescription": "Register to start managing your files.",
+    "verifyTitle": "Verify your email",
+    "verifyDescription": "Enter the 6-digit code we emailed you.",
+    "codeSent": "We sent a 6-digit code to {{email}}. Check your inbox.",
+    "codeResent": "A new code has been sent.",
+    "didNotGetCode": "Did not get a code?",
+    "alreadyHaveAccount": "Already have an account?",
+    "createAccount": "Create account",
+    "resendIn": "Resend in {{count}}s"
+  },
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "faq": "FAQ",
+    "contact": "Contact",
+    "profile": "Profile",
+    "overview": "Overview",
+    "files": "Files",
+    "admin": "Admin",
+    "users": "Users",
+    "primary": "Primary",
+    "menu": "Menu",
+    "openMenu": "Open menu"
+  },
+  "appShell": {
+    "hello": "Welcome",
+    "expandSidebar": "Expand sidebar",
+    "collapseSidebar": "Collapse sidebar",
+    "primary": "Main navigation",
+    "menu": "Menu"
+  },
+  "footer": {
+    "product": "Product",
+    "company": "Company",
+    "legal": "Legal",
+    "resources": "Resources",
+    "tagline": "A simple file management platform for uploading, organizing and finding your documents.",
+    "copyright": "© {{year}} Managing Your Files. All rights reserved.",
+    "madeWith": "Made for getting files in order.",
+    "github": "GitHub",
+    "x": "X (Twitter)",
+    "linkedin": "LinkedIn"
+  },
+  "hero": {
+    "eyebrow": "Upload · Organize · Find",
+    "titlePart1": "Every file,",
+    "titleAccent": "in its place.",
+    "subtitle": "Upload up to ten files at once, sort them by name, size or date, and search across everything in seconds. No folders lost in the void — just a clean workspace for your documents.",
+    "createAccount": "Create your account",
+    "secureNote": "Email verification keeps your files secure.",
+    "trayLabel": "My files",
+    "trayCount": "4 files",
+    "stamp": "Organized"
+  },
+  "features": {
+    "eyebrow": "What it does",
+    "title": "Everything you need to stay organized",
+    "subtitle": "Focused tools for getting documents out of the way — upload, browse, find, done.",
+    "upload": {
+      "title": "Upload by the batch",
+      "desc": "Select up to ten files at once — PDFs, images, text and data files. We handle the rest."
+    },
+    "search": {
+      "title": "Search instead of scroll",
+      "desc": "Search by file name, filter by type, and sort by name, size or upload date. What you need is two keystrokes away."
+    },
+    "details": {
+      "title": "See the details",
+      "desc": "Open any file to check size, type, extension and upload date — plus a preview of extracted text for readable documents."
+    },
+    "storage": {
+      "title": "Know your storage",
+      "desc": "The dashboard shows total files, storage used and uploads by type, so you always know what is taking up space."
+    },
+    "security": {
+      "title": "Secure by default",
+      "desc": "Accounts are protected with email verification and signed requests, and each user only sees their own files."
+    },
+    "admin": {
+      "title": "Built for admins",
+      "desc": "Administrators can manage users, change roles and monitor platform-wide usage from a single panel."
+    }
+  },
+  "swiper": {
+    "eyebrow": "Take a look",
+    "title": "Made to fit the way you work",
+    "subtitle": "A quick tour of the screens you will actually use.",
+    "dashboard": {
+      "label": "Dashboard",
+      "title": "Overview at a glance",
+      "desc": "Stat cards and charts show total files, storage used and uploads over time."
+    },
+    "files": {
+      "label": "Files",
+      "title": "A file list that works",
+      "desc": "Search, filter and sort your files, then jump straight into any document."
+    },
+    "detail": {
+      "label": "File detail",
+      "title": "Every detail, up front",
+      "desc": "Size, type, extension and a text preview — everything about a file on one screen."
+    },
+    "admin": {
+      "label": "Admin panel",
+      "title": "Admin without the guesswork",
+      "desc": "Manage users, roles and platform-wide storage from a single panel."
+    }
+  },
+  "howItWorks": {
+    "eyebrow": "How it works",
+    "title": "From upload to order in four steps",
+    "subtitle": "No setup, no folders to configure — just move your files and go.",
+    "account": {
+      "title": "Create an account",
+      "desc": "Sign up with your email and verify it in one step."
+    },
+    "upload": {
+      "title": "Upload your files",
+      "desc": "Drop in up to ten files at once — PDFs, images, text and data."
+    },
+    "organize": {
+      "title": "Organize and search",
+      "desc": "Filter by type, sort by size or date, and find anything in seconds."
+    },
+    "track": {
+      "title": "Track your storage",
+      "desc": "Watch uploads and storage usage grow on your dashboard."
+    }
+  },
+  "cta": {
+    "title": "Ready to get your files in order?",
+    "subtitle": "Create a free account and start organizing today.",
+    "createAccount": "Create your account"
+  },
+  "about": {
+    "eyebrow": "About us",
+    "title": "About Managing Your Files",
+    "intro": "A simple file management platform for keeping your documents organized and easy to find.",
+    "whatTitle": "What it is",
+    "whatBody": "A workspace where you can upload files, browse them by type, search by name, and see useful details like size and upload date — without digging through folders.",
+    "whoTitle": "Who it is for",
+    "whoBody": "Students, freelancers and small teams who handle lots of files and want a single, clean place to keep them — without the complexity of a heavyweight document system.",
+    "whyTitle": "Why we built it",
+    "whyBody": "Most file tools are either complicated or scattered. We wanted something that gets out of your way: upload, find, done. Managing Your Files grew out of that — a focused tool that does file organization properly.",
+    "principlesTitle": "Our principles",
+    "principle1": "Simplicity first — if a feature adds friction, it does not ship.",
+    "principle2": "Your files stay private to your account.",
+    "principle3": "Honest about limits — no magic, no clutter."
+  },
+  "contact": {
+    "eyebrow": "Contact",
+    "title": "Contact us",
+    "intro": "Questions, feedback or a feature idea? Send us a message and we will get back to you.",
+    "name": "Name",
+    "message": "Message",
+    "messagePlaceholder": "Tell us what is on your mind…",
+    "messageTooShort": "Message must be at least 10 characters",
+    "submit": "Send message",
+    "successToast": "Thanks! Your message has been sent. We will get back to you soon.",
+    "responseNote": "We usually reply within one business day."
+  },
+  "terms": {
+    "eyebrow": "Legal",
+    "title": "Terms of Service",
+    "intro": "The rules that keep Managing Your Files safe and fair for everyone.",
+    "lastUpdated": "Last updated: August 2026",
+    "acceptanceTitle": "Acceptance of terms",
+    "acceptanceBody": "By creating an account or using Managing Your Files, you agree to these Terms of Service. If you do not agree, please do not use the service.",
+    "accountTitle": "Account responsibilities",
+    "accountBody": "You are responsible for keeping your login credentials secure and for everything that happens under your account. Do not share your password or let others use your account.",
+    "acceptableUseTitle": "Acceptable use",
+    "acceptableUseBody": "Use the service lawfully. Do not attempt to access other users' files, disrupt the service, or use it to store or distribute unlawful material.",
+    "contentTitle": "Your files",
+    "contentBody": "You keep full ownership of the files you upload. We do not claim any rights over your content, and we never share it with third parties.",
+    "terminationTitle": "Termination",
+    "terminationBody": "You may delete your account at any time. We may suspend or close accounts that violate these terms, and we will remove the associated files when an account is closed.",
+    "liabilityTitle": "Limitation of liability",
+    "liabilityBody": "The service is provided \"as is\". To the extent permitted by law, we are not liable for damages arising from your use of the service, including loss of data. Keep backups of anything important.",
+    "changesTitle": "Changes to these terms",
+    "changesBody": "We may update these terms from time to time. Significant changes will be announced, and continued use of the service after changes take effect means you accept the updated terms.",
+    "contactTitle": "Contact",
+    "contactBody": "Questions about these terms? Reach out through the contact page and we will help."
+  },
+  "privacy": {
+    "eyebrow": "Legal",
+    "title": "Privacy Policy",
+    "intro": "What we collect, why we collect it, and how we keep your files private.",
+    "lastUpdated": "Last updated: August 2026",
+    "collectTitle": "Information we collect",
+    "collectBody": "We collect your name and email address when you register. When you upload files, we store the files and their metadata (name, type, size, upload date).",
+    "filesTitle": "How we handle your files",
+    "filesBody": "Your files are only visible to you and are never shared with other users. Administrators can manage the platform but do not have access to your file content beyond what is needed to operate the service.",
+    "usageTitle": "How we use your data",
+    "usageBody": "We use your data to run the service: authenticating you, storing and serving your files, and showing you your storage statistics.",
+    "cookiesTitle": "Cookies",
+    "cookiesBody": "We use local storage for your session token and your interface preferences (theme and language). No third-party tracking cookies are used.",
+    "rightsTitle": "Your rights",
+    "rightsBody": "You can request a copy of your data, ask for corrections, or ask us to delete your account and files. Contact us through the contact page to make a request.",
+    "retentionTitle": "Data retention",
+    "retentionBody": "Files remain in your account until you delete them or close your account. When you delete a file or account, the data is removed from storage.",
+    "contactTitle": "Contact for data requests",
+    "contactBody": "For any privacy question or data request, get in touch via the contact page."
+  },
+  "faq": {
+    "eyebrow": "Help",
+    "title": "Frequently asked questions",
+    "intro": "Quick answers to the questions we hear most often.",
+    "supported": {
+      "question": "What file types are supported?",
+      "answer": "PDFs, images, text files and common data formats. If a file is one of these, you can upload and manage it."
+    },
+    "limits": {
+      "question": "Is there a file size limit?",
+      "answer": "You can upload up to ten files at once. Each upload is subject to a per-file size limit set by the platform to keep storage reliable."
+    },
+    "security": {
+      "question": "How secure is my data?",
+      "answer": "Accounts are protected with email verification and authenticated requests. Files are only visible to their owner, and administrators do not see user file content."
+    },
+    "deletion": {
+      "question": "Can I delete my account?",
+      "answer": "Yes — you can request account deletion at any time. Admins can also close accounts, which removes the associated files."
+    },
+    "retention": {
+      "question": "How long is my data kept?",
+      "answer": "Files stay in your account until you delete them or your account is closed. Removed files are purged from storage."
+    },
+    "pricing": {
+      "question": "Is there a free tier?",
+      "answer": "Managing Your Files is free to use while the platform is in active development. If paid plans are introduced later, we will announce them well in advance."
+    },
+    "sharing": {
+      "question": "Can I share files with other people?",
+      "answer": "Not yet — sharing is on the roadmap. For now, every file stays private to your account."
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Your account details.",
+    "adminRole": "Administrator",
+    "userRole": "Member",
+    "memberSince": "Member since",
+    "manageHint": "Need to change account details? Contact an administrator."
+  },
+  "dashboard": {
+    "welcomeBack": "Welcome back, {{name}}",
+    "title": "Overview",
+    "subtitle": "Your storage usage at a glance.",
+    "loadError": "Could not load your stats.",
+    "totalFiles": "Total files",
+    "storageUsed": "Storage used",
+    "uploadsLast30d": "Uploads (last 30d)",
+    "uploadsByType": "Uploads by type",
+    "uploadsByTypeDescription": "Distribution of your files by extension.",
+    "noUploadsYet": "No uploads yet.",
+    "uploadFirstFile": "Upload your first file",
+    "dailyUploads": "Daily uploads",
+    "dailyUploadsDescription": "Files uploaded over the last {{days}} days."
+  },
+  "files": {
+    "title": "Files",
+    "subtitle": "Upload, browse and manage your files.",
+    "uploadFiles": "Upload files",
+    "uploadHint": "PDF, images, text or data files — up to 10 at once.",
+    "chooseFilesToUpload": "Choose files to upload",
+    "uploadSuccess": "Files uploaded successfully.",
+    "uploadFailed": "Upload failed.",
+    "searchPlaceholder": "Search by file name…",
+    "typePlaceholder": "Type (e.g. pdf)",
+    "loadError": "Could not load files.",
+    "noFilesFound": "No files found",
+    "adjustFilters": "Try adjusting your search or filters.",
+    "uploadFirstFile": "Upload your first file to get started.",
+    "name": "Name",
+    "type": "Type",
+    "size": "Size",
+    "uploaded": "Uploaded",
+    "actions": "Actions",
+    "deleteLabel": "Delete {{name}}",
+    "deleteTitle": "Delete file",
+    "deleteConfirm": "Are you sure you want to delete \"{{name}}\"? This cannot be undone.",
+    "deleteConfirmShort": "Delete \"{{name}}\"? This cannot be undone.",
+    "deleted": "File deleted.",
+    "deleteFailed": "Delete failed.",
+    "detailLoadError": "Could not load this file.",
+    "extension": "Extension",
+    "open": "Open",
+    "extractedText": "Extracted text"
+  },
+  "admin": {
+    "title": "Admin",
+    "overviewTitle": "System overview",
+    "overviewSubtitle": "Platform-wide usage across all users.",
+    "loadError": "Could not load system stats.",
+    "totalUsers": "Total users",
+    "totalFiles": "Total files",
+    "totalStorage": "Total storage",
+    "mostUploadedTypes": "Most uploaded types",
+    "mostUploadedTypesDescription": "File extensions across the whole platform.",
+    "noUploadsYet": "No uploads yet",
+    "recentUploads": "Recent uploads",
+    "recentUploadsDescription": "The 10 most recently uploaded files.",
+    "usersTitle": "Users",
+    "usersSubtitle": "Manage accounts and roles.",
+    "searchPlaceholder": "Search by name or email…",
+    "all": "All",
+    "usersLoadError": "Could not load users.",
+    "noUsersFound": "No users found",
+    "status": "Status",
+    "role": "Role",
+    "joined": "Joined",
+    "you": "You",
+    "verified": "Verified",
+    "unverified": "Unverified",
+    "roleUpdated": "Role updated.",
+    "updateFailed": "Update failed.",
+    "deleteUserTitle": "Delete user",
+    "deleteUserConfirm": "Delete \"{{name}}\" ({{email}})? Their files will be removed too. This cannot be undone.",
+    "userDeleted": "User deleted.",
+    "deleteFailed": "Delete failed."
+  }
+}

@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id                String             @id @default(uuid())
+  name              String
+  email             String             @unique
+  password          String
+  role              Role               @default(USER)
+  isVerified        Boolean            @default(false)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  files             File[]
+  verificationCodes VerificationCode[]
+
+  @@map("users")
+}
+
+model VerificationCode {
+  id        String   @id @default(uuid())
+  code      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("verification_codes")
+}
+
+model File {
+  id            String    @id @default(uuid())
+  originalName  String
+  storedName    String
+  mimeType      String
+  size          Int
+  extension     String
+  url           String
+  extractedText String?
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deletedAt     DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([userId])
+  @@map("files")
+}
