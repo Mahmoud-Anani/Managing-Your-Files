@@ -5,3 +5,4 @@ storage/
 *.log
 .env
 .env.local
+.vscode
