@@ -99,11 +99,7 @@ export function requestLogger(
   const query = detail('query', req.query);
   const headers = detail('headers', req.headers);
 
-  nestLog(
-    'LOG',
-    'HTTP',
-    `${color('cyan', `${req.method} ${req.path}`)}${query}${headers}`,
-  );
+  nestLog('LOG', 'HTTP', `${color('cyan', `${req.method} ${req.path}`)}`);
 
   res.on('finish', () => {
     const durationMs = Number(process.hrtime.bigint() - startedAt) / 1e6;

@@ -2,16 +2,13 @@ import type { Request, Response } from 'express';
 import { getAuthUser } from '../../common/guards';
 import { ValidationError } from '../../common/errors';
 import { FilesService } from './files.service';
-import type {
-  AdminListFilesQueryDto,
-  ListFilesQueryDto,
-} from './files.dto';
+import type { AdminListFilesQueryDto, ListFilesQueryDto } from './files.dto';
 
 const filesService = new FilesService();
 
 export class FilesController {
   //  @docs   Can Only User Logged upload files
-  //  @Route  POST /api/v1/cart/:productId
+  //  @Route  POST /api/v1/files
   //  @access Private [User]
   async upload(req: Request, res: Response): Promise<void> {
     const user = getAuthUser(req);
