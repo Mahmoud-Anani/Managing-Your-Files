@@ -27,7 +27,7 @@ export function useUserStats(days = 7) {
   return useQuery({
     queryKey: queryKeys.userStats(days),
     queryFn: async () => {
-      const { data } = await api.get<UserStats>("/api/stats/user", {
+      const { data } = await api.get<UserStats>("/stats/user", {
         params: { days },
       });
       return data;
@@ -40,7 +40,7 @@ export function useFiles(query: ListFilesQuery) {
     queryKey: queryKeys.files(query),
     queryFn: async () => {
       const { data } = await api.get<PaginatedResult<SafeFileDto>>(
-        "/api/files",
+        "/files",
         { params: query },
       );
       return data;
@@ -52,7 +52,7 @@ export function useFile(id: string) {
   return useQuery({
     queryKey: queryKeys.file(id),
     queryFn: async () => {
-      const { data } = await api.get<FileDetailDto>(`/api/files/${id}`);
+      const { data } = await api.get<FileDetailDto>(`/files/${id}`);
       return data;
     },
   });
@@ -62,7 +62,7 @@ export function useAdminStats() {
   return useQuery({
     queryKey: queryKeys.adminStats(),
     queryFn: async () => {
-      const { data } = await api.get<AdminStats>("/api/stats/admin");
+      const { data } = await api.get<AdminStats>("/stats/admin");
       return data;
     },
   });
@@ -73,7 +73,7 @@ export function useAdminFiles(query: AdminListFilesQuery) {
     queryKey: queryKeys.adminFiles(query),
     queryFn: async () => {
       const { data } = await api.get<PaginatedResult<SafeFileDto>>(
-        "/api/admin/files",
+        "/admin/files",
         { params: query },
       );
       return data;
@@ -86,7 +86,7 @@ export function useUsers(query: ListUsersQuery) {
     queryKey: queryKeys.users(query),
     queryFn: async () => {
       const { data } = await api.get<PaginatedResult<SafeUserDto>>(
-        "/api/users",
+        "/users",
         { params: query },
       );
       return data;

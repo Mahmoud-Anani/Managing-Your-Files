@@ -31,7 +31,7 @@ export default function FileDetailPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      await api.delete(`/api/files/${id}`);
+      await api.delete(`/files/${id}`);
     },
     onSuccess: () => {
       toast(t("files.deleted"), "success");

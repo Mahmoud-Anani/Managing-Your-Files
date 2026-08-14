@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     let cancelled = false;
     api
-      .get<SafeUserDto>("/api/auth/profile")
+      .get<SafeUserDto>("/auth/profile")
       .then((response) => {
         if (cancelled) {
           return;
@@ -96,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(
     async (input: LoginInput) => {
       const { data } = await api.post<{ token: string; user: SafeUserDto }>(
-        "/api/auth/login",
+        "/auth/login",
         input,
       );
       setToken(data.token);
@@ -115,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   const refreshUser = useCallback(async () => {
-    const response = await api.get<SafeUserDto>("/api/auth/profile");
+    const response = await api.get<SafeUserDto>("/auth/profile");
     setUser(response.data);
     const currentToken = getStoredToken();
     if (currentToken) {

@@ -100,7 +100,7 @@ export default function RegisterPage() {
     setInfo(null);
     try {
       const { data } = await api.post<{ userId: string; email: string }>(
-        "/api/auth/register",
+        "/auth/register",
         {
           name: values.name,
           email: values.email,
@@ -121,7 +121,7 @@ export default function RegisterPage() {
   const onVerify = async (values: VerifyFormValues) => {
     setError(null);
     try {
-      await api.post("/api/auth/verify-email", {
+      await api.post("/auth/verify-email", {
         email: pendingEmail,
         code: values.code,
       });
@@ -142,7 +142,7 @@ export default function RegisterPage() {
     setError(null);
     setInfo(null);
     try {
-      await api.post("/api/auth/resend-code", { email: pendingEmail });
+      await api.post("/auth/resend-code", { email: pendingEmail });
       setInfo(t("auth.codeResent"));
       startResendCountdown();
     } catch (err) {

@@ -60,7 +60,7 @@ export default function FilesPage() {
     mutationFn: async (files: FileList | File[]) => {
       const formData = new FormData();
       Array.from(files).forEach((file) => formData.append("files", file));
-      await api.post("/api/files/upload", formData, {
+      await api.post("/files/upload", formData, {
         headers: { "Content-Type": null },
       });
     },
@@ -79,7 +79,7 @@ export default function FilesPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/api/files/${id}`);
+      await api.delete(`/files/${id}`);
     },
     onSuccess: () => {
       toast(t("files.deleted"), "success");

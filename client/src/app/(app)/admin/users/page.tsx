@@ -63,7 +63,7 @@ export default function AdminUsersPage() {
 
   const roleMutation = useMutation({
     mutationFn: async ({ id, role }: { id: string; role: Role }) => {
-      await api.patch(`/api/users/${id}`, { role });
+      await api.patch(`/users/${id}`, { role });
     },
     onSuccess: () => {
       toast(t("admin.roleUpdated"), "success");
@@ -76,7 +76,7 @@ export default function AdminUsersPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/api/users/${id}`);
+      await api.delete(`/users/${id}`);
     },
     onSuccess: () => {
       toast(t("admin.userDeleted"), "success");
