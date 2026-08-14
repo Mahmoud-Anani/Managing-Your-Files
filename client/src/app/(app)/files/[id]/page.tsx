@@ -96,7 +96,7 @@ export default function FileDetailPage() {
         </div>
         <div className="flex items-center gap-2">
           <a
-            href={`${process.env.NEXT_PUBLIC_API_URL}${data.url}`}
+            href={data.url.startsWith('http') ? data.url : `${process.env.NEXT_PUBLIC_API_URL}${data.url}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-border bg-transparent px-3 text-xs font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

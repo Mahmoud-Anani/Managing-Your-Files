@@ -1,10 +1,12 @@
-import { promises as fs } from 'fs';
-import path from 'path';
 import type { File, Prisma, Role, User } from '@prisma/client';
 import { prisma } from '../../config/prisma';
 import { ForbiddenError, NotFoundError } from '../../common/errors';
 import { paginate, type PaginatedResult } from '../../common/pagination';
-import { STORAGE_DIR } from '../../common/multer';
+import {
+  cloudinaryPublicId,
+  deleteFromCloudinary,
+  uploadToCloudinary,
+} from '../../common/cloudinary';
 import {
   toFileDetailDto,
   toSafeFileDto,
@@ -30,12 +32,12 @@ function fileOrderBy(
   return { createdAt: sortOrder };
 }
 
-async function removeStoredFile(storedName: string): Promise<void> {
+async function removeStoredFile(publicId: string): Promise<void> {
   try {
-    await fs.unlink(path.join(STORAGE_DIR, storedName));
+    await deleteFromCloudinary(publicId);
   } catch {
-    // The stored file may already be missing; the database record is the
-    // source of truth for the delete operation.
+    // The Cloudinary asset may already be missing; the database record is
+    // the source of truth for the delete operation.
   }
 }
 
@@ -46,25 +48,32 @@ export class FilesService {
   ): Promise<SafeFileDto[]> {
     const records = await Promise.all(
       files.map(async (file) => {
-        const buffer = await fs.readFile(file.path);
-        const extension = path
-          .extname(file.originalname)
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, '');
+        const extension = file.originalname
+          .split('.')
+          .pop()
+          ?.toLowerCase()
+          .replace(/[^a-z0-9]/g, '') ?? '';
         const extractedText = await extractText({
-          buffer,
+          buffer: file.buffer,
           mimeType: file.mimetype,
           extension,
+        });
+
+        const publicId = cloudinaryPublicId(extension ? `.${extension}` : '');
+        const uploaded = await uploadToCloudinary({
+          buffer: file.buffer,
+          publicId,
+          mimeType: file.mimetype,
         });
 
         const record = await prisma.file.create({
           data: {
             originalName: file.originalname,
-            storedName: file.filename,
+            storedName: uploaded.publicId,
             mimeType: file.mimetype,
             size: file.size,
             extension,
-            url: `/uploads/${file.filename}`,
+            url: uploaded.secureUrl,
             extractedText,
             userId: user.id,
           },

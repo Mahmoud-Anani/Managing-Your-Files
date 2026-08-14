@@ -167,13 +167,13 @@ export const openapi = {
           originalName: { type: 'string', example: 'quarterly-report.pdf' },
           storedName: {
             type: 'string',
-            description: 'Obfuscated file name on disk.',
-            example: '25f7d1af-082a-476b-a59a-0c4085c0dc15.pdf',
+            description: 'Cloudinary public ID of the asset.',
+            example: 'managing-your-files/25f7d1af-082a-476b-a59a-0c4085c0dc15.pdf',
           },
           mimeType: { type: 'string', example: 'application/pdf' },
           size: { type: 'integer', format: 'int64', example: 102400 },
           extension: { type: 'string', example: 'pdf' },
-          url: { type: 'string', description: 'Relative URL to download the file.', example: '/uploads/25f7d1af-082a-476b-a59a-0c4085c0dc15.pdf' },
+          url: { type: 'string', format: 'uri', description: 'Cloudinary CDN URL of the file.', example: 'https://res.cloudinary.com/<cloud_name>/image/upload/v1/managing-your-files/25f7d1af-082a-476b-a59a-0c4085c0dc15.pdf' },
           userId: { type: 'string', format: 'uuid', description: 'Owner of the file.' },
           createdAt: { type: 'string', format: 'date-time' },
         },
@@ -669,7 +669,7 @@ export const openapi = {
       delete: {
         tags: ['Files'],
         summary: 'Delete a file',
-        description: 'Deletes the file and removes it from disk. Users can only delete their own files.',
+        description: 'Deletes the file and its Cloudinary asset. Users can only delete their own files.',
         operationId: 'deleteFile',
         security: bearer,
         parameters: [

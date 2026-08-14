@@ -5,7 +5,6 @@ import { env } from './config/env';
 import { prisma } from './config/prisma';
 import { errorHandler } from './common/error-handler';
 import { notFoundHandler } from './common/not-found-handler';
-import { STORAGE_DIR } from './common/multer';
 import { requestLogger } from './common/request-logger';
 import authRoutes from './modules/auth/auth.routes';
 import usersRoutes from './modules/users/users.routes';
@@ -23,8 +22,6 @@ app.use(
 );
 app.use(requestLogger);
 app.use(express.json({ limit: '1mb' }));
-
-app.use('/uploads', express.static(STORAGE_DIR));
 
 const apiRouter = express.Router();
 

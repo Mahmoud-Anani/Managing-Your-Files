@@ -23,6 +23,13 @@ const envSchema = z.object({
   SMTP_PORT: z.coerce.number().int().positive().default(587),
   EMAIL_FROM: z.string().default('Managing Your Files <no-reply@example.com>'),
   MAX_FILE_SIZE_MB: z.coerce.number().int().positive().max(100).default(25),
+  CLOUDINARY_CLOUD_NAME: z
+    .string()
+    .min(1, 'CLOUDINARY_CLOUD_NAME is required'),
+  CLOUDINARY_API_KEY: z.string().min(1, 'CLOUDINARY_API_KEY is required'),
+  CLOUDINARY_API_SECRET: z
+    .string()
+    .min(1, 'CLOUDINARY_API_SECRET is required'),
 });
 
 export type Env = z.infer<typeof envSchema>;

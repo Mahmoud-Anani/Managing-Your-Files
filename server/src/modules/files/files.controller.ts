@@ -14,7 +14,6 @@ export class FilesController {
     const user = getAuthUser(req);
 
     const files = req.files as Express.Multer.File[] | undefined;
-    console.log(files);
     if (!files || files.length === 0) {
       throw new ValidationError('At least one file is required');
     }
