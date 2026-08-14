@@ -1,14 +1,18 @@
-import type { ButtonHTMLAttributes } from "react";
+"use client";
+
+import type { ReactNode } from "react";
+import { motion, type HTMLMotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Spinner } from "./spinner";
 
 type Variant = "primary" | "secondary" | "outline" | "ghost" | "destructive";
 type Size = "sm" | "md" | "lg" | "icon";
 
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends HTMLMotionProps<"button"> {
   variant?: Variant;
   size?: Size;
   loading?: boolean;
+  children?: ReactNode;
 }
 
 const variantClasses: Record<Variant, string> = {
@@ -18,8 +22,7 @@ const variantClasses: Record<Variant, string> = {
     "bg-secondary text-secondary-foreground hover:bg-secondary/80 focus-visible:ring-ring",
   outline:
     "border border-border bg-transparent hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring",
-  ghost:
-    "hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring",
+  ghost: "hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring",
   destructive:
     "bg-destructive text-destructive-foreground hover:opacity-90 focus-visible:ring-destructive",
 };
@@ -41,10 +44,12 @@ export function Button({
   ...props
 }: ButtonProps) {
   return (
-    <button
+    <motion.button
       disabled={disabled || loading}
+      whileTap={{ scale: 0.97 }}
+      transition={{ duration: 0.12, ease: "easeOut" }}
       className={cn(
-        "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
+        "cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
         variantClasses[variant],
         sizeClasses[size],
         className,
@@ -53,6 +58,6 @@ export function Button({
     >
       {loading ? <Spinner className="size-4" /> : null}
       {children}
-    </button>
+    </motion.button>
   );
 }

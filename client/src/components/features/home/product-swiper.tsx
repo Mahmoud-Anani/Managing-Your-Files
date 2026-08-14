@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { A11y, Navigation, Pagination } from "swiper/modules";
@@ -55,7 +56,11 @@ export function ProductSwiper() {
         >
           {slides.map(({ key, icon: Icon }) => (
             <SwiperSlide key={key} className="h-auto">
-              <div className="flex h-full flex-col rounded-xl border border-border bg-card p-6 shadow-sm">
+              <motion.div
+                whileHover={{ y: -4 }}
+                transition={{ type: "spring", damping: 20, stiffness: 320 }}
+                className="flex h-full flex-col rounded-xl border border-border bg-card p-6 shadow-sm"
+              >
                 <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-accent-foreground">
                   <Icon className="size-3.5" aria-hidden />
                   {t(`swiper.${key}.label`)}
@@ -69,7 +74,7 @@ export function ProductSwiper() {
                 <div className="mt-6" aria-hidden>
                   <SlideVisual kind={key} />
                 </div>
-              </div>
+              </motion.div>
             </SwiperSlide>
           ))}
         </Swiper>

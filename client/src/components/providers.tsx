@@ -3,7 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { MotionConfig } from "framer-motion";
-import { ThemeProvider } from "next-themes";
+import { ThemeProvider } from "@teispace/next-themes";
 import { ToastProvider } from "@/components/ui/toast";
 import { AuthProvider } from "@/contexts/auth-context";
 import { I18nProvider } from "@/contexts/i18n-provider";

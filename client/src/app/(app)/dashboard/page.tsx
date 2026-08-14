@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
+import { motion } from "framer-motion";
 import {
   Bar,
   BarChart,
@@ -25,6 +26,14 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import {
+  CountUp,
+} from "@/components/motion/count-up";
+import {
+  GrowBar,
+  RevealGroup,
+  RevealItem,
+} from "@/components/motion/reveal";
 
 export default function OverviewPage() {
   const { t } = useTranslation();
@@ -72,28 +81,37 @@ export default function OverviewPage() {
         </div>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard
-          icon={<FileText className="size-4" />}
-          label={t("dashboard.totalFiles")}
-          loading={isLoading}
-          value={data ? String(data.totalFiles) : "0"}
-        />
-        <StatCard
-          icon={<HardDrive className="size-4" />}
-          label={t("dashboard.storageUsed")}
-          loading={isLoading}
-          value={data ? formatBytes(data.totalStorageBytes) : "0 B"}
-        />
-        <StatCard
-          icon={<UploadCloud className="size-4" />}
-          label={t("dashboard.uploadsLast30d")}
-          loading={isLoading}
-          value={
-            data ? String(data.dailyUploads.reduce((sum, d) => sum + d.count, 0)) : "0"
-          }
-        />
-      </div>
+      <RevealGroup className="grid gap-4 sm:grid-cols-3" stagger={0.12}>
+        <RevealItem>
+          <StatCard
+            icon={<FileText className="size-4" />}
+            label={t("dashboard.totalFiles")}
+            loading={isLoading}
+            value={data?.totalFiles ?? 0}
+          />
+        </RevealItem>
+        <RevealItem>
+          <StatCard
+            icon={<HardDrive className="size-4" />}
+            label={t("dashboard.storageUsed")}
+            loading={isLoading}
+            value={data?.totalStorageBytes ?? 0}
+            format={formatBytes}
+          />
+        </RevealItem>
+        <RevealItem>
+          <StatCard
+            icon={<UploadCloud className="size-4" />}
+            label={t("dashboard.uploadsLast30d")}
+            loading={isLoading}
+            value={
+              data
+                ? data.dailyUploads.reduce((sum, d) => sum + d.count, 0)
+                : 0
+            }
+          />
+        </RevealItem>
+      </RevealGroup>
 
       <Card>
         <CardHeader>
@@ -116,20 +134,19 @@ export default function OverviewPage() {
             </p>
           ) : (
             <div className="space-y-3">
-              {data.typeBreakdown.map((entry) => (
+              {data.typeBreakdown.map((entry, index) => (
                 <div key={entry.extension} className="flex items-center gap-3">
                   <Badge variant="outline" className="w-20 justify-center">
                     {entry.extension}
                   </Badge>
                   <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-primary"
-                      style={{
-                        width: `${Math.max(
-                          4,
-                          (entry.count / data.typeBreakdown[0].count) * 100,
-                        )}%`,
-                      }}
+                    <GrowBar
+                      width={`${Math.max(
+                        4,
+                        (entry.count / data.typeBreakdown[0].count) * 100,
+                      )}%`}
+                      className="bg-primary"
+                      delay={index * 0.08}
                     />
                   </div>
                   <span className="w-24 text-right text-xs text-muted-foreground">
@@ -191,27 +208,38 @@ function StatCard({
   label,
   value,
   loading,
+  format,
 }: {
   icon: React.ReactNode;
   label: string;
-  value: string;
+  value: number;
   loading: boolean;
+  format?: (n: number) => string;
 }) {
   return (
-    <Card>
-      <CardContent className="flex items-center gap-4 p-5">
-        <div className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-          {icon}
-        </div>
-        <div className="min-w-0">
-          <p className="truncate text-sm text-muted-foreground">{label}</p>
-          {loading ? (
-            <Skeleton className="mt-1 h-6 w-20" />
-          ) : (
-            <p className="truncate text-xl font-semibold tracking-tight">{value}</p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+    <motion.div
+      whileHover={{ y: -3 }}
+      transition={{ type: "spring", damping: 20, stiffness: 320 }}
+    >
+      <Card>
+        <CardContent className="flex items-center gap-4 p-5">
+          <div className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
+            {icon}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm text-muted-foreground">{label}</p>
+            {loading ? (
+              <Skeleton className="mt-1 h-6 w-20" />
+            ) : (
+              <CountUp
+                value={value}
+                format={format}
+                className="block truncate text-xl font-semibold tracking-tight"
+              />
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }

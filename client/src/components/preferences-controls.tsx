@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { useTheme } from "next-themes";
+import { useTheme } from "@teispace/next-themes";
 import { useTranslation } from "react-i18next";
 import { Check, Globe, Monitor, Moon, Sun } from "lucide-react";
 import { useI18n } from "@/contexts/i18n-provider";
@@ -49,7 +49,7 @@ function ThemeMenu() {
       <button
         type="button"
         disabled
-        className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground"
+        className="cursor-pointer inline-flex size-8 items-center justify-center rounded-md text-muted-foreground"
         aria-label={t("common.theme")}
       >
         <Monitor className="size-4" />
@@ -90,7 +90,7 @@ function LanguageMenu() {
           active={locale === value}
           onClick={() => setLocale(value)}
           icon={
-            <span className="w-4 text-center text-xs font-semibold">
+            <span className="cursor-pointer w-4 text-center text-xs font-semibold">
               {value === "en" ? "EN" : "ع"}
             </span>
           }
@@ -142,12 +142,12 @@ function Menu({
         onClick={() => setOpen((current) => !current)}
         aria-label={ariaLabel}
         aria-expanded={open}
-        className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+        className="cursor-pointer inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
       >
         {trigger}
       </button>
       {open ? (
-        <div className="absolute end-0 top-full z-50 mt-1 w-40 rounded-md border border-border bg-card p-1 shadow-lg">
+        <div className="absolute inset-e-0 top-full z-50 mt-1 w-40 rounded-md border border-border bg-card p-1 shadow-lg">
           {children}
         </div>
       ) : null}
@@ -171,7 +171,7 @@ function MenuItem({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-start text-sm transition-colors",
+        "cursor-pointer mt-2 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-start text-sm transition-colors",
         active
           ? "bg-accent font-medium text-accent-foreground"
           : "text-foreground/80 hover:bg-accent/60 hover:text-accent-foreground",

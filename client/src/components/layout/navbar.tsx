@@ -198,7 +198,7 @@ function UserMenu() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.98 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute end-0 top-full z-50 mt-2 w-56 rounded-md border border-border bg-card p-1.5 shadow-lg"
+            className="absolute inset-e-0 top-full z-50 mt-2 w-56 rounded-md border border-border bg-card p-1.5 shadow-lg"
           >
             <div className="border-b border-border px-2.5 py-2">
               <p className="truncate text-sm font-medium text-foreground">

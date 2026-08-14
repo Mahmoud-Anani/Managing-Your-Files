@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
+import { motion } from "framer-motion";
 import { FileText, HardDrive, Users } from "lucide-react";
 import { formatBytes } from "@/lib/api";
 import { useAdminStats } from "@/hooks/use-queries";
@@ -25,6 +26,12 @@ import {
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { CountUp } from "@/components/motion/count-up";
+import {
+  GrowBar,
+  RevealGroup,
+  RevealItem,
+} from "@/components/motion/reveal";
 
 export default function AdminOverviewPage() {
   const { t } = useTranslation();
@@ -50,26 +57,33 @@ export default function AdminOverviewPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard
-          label={t("admin.totalUsers")}
-          value={data ? String(data.totalUsers) : "0"}
-          loading={isLoading}
-          icon={<Users className="size-4" />}
-        />
-        <StatCard
-          label={t("admin.totalFiles")}
-          value={data ? String(data.totalFiles) : "0"}
-          loading={isLoading}
-          icon={<FileText className="size-4" />}
-        />
-        <StatCard
-          label={t("admin.totalStorage")}
-          value={data ? formatBytes(data.totalStorageBytes) : "0 B"}
-          loading={isLoading}
-          icon={<HardDrive className="size-4" />}
-        />
-      </div>
+      <RevealGroup className="grid gap-4 sm:grid-cols-3" stagger={0.12}>
+        <RevealItem>
+          <StatCard
+            label={t("admin.totalUsers")}
+            value={data?.totalUsers ?? 0}
+            loading={isLoading}
+            icon={<Users className="size-4" />}
+          />
+        </RevealItem>
+        <RevealItem>
+          <StatCard
+            label={t("admin.totalFiles")}
+            value={data?.totalFiles ?? 0}
+            loading={isLoading}
+            icon={<FileText className="size-4" />}
+          />
+        </RevealItem>
+        <RevealItem>
+          <StatCard
+            label={t("admin.totalStorage")}
+            value={data?.totalStorageBytes ?? 0}
+            loading={isLoading}
+            format={formatBytes}
+            icon={<HardDrive className="size-4" />}
+          />
+        </RevealItem>
+      </RevealGroup>
 
       <Card>
         <CardHeader>
@@ -96,14 +110,13 @@ export default function AdminOverviewPage() {
                     {entry.extension}
                   </Badge>
                   <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-primary"
-                      style={{
-                        width: `${Math.max(
-                          4,
-                          (entry.count / data.mostUploadedTypes[0].count) * 100,
-                        )}%`,
-                      }}
+                    <GrowBar
+                      width={`${Math.max(
+                        4,
+                        (entry.count / data.mostUploadedTypes[0].count) * 100,
+                      )}%`}
+                      className="bg-primary"
+                      delay={index * 0.08}
                     />
                   </div>
                   <span className="w-24 text-right text-xs text-muted-foreground">
@@ -171,27 +184,38 @@ function StatCard({
   value,
   loading,
   icon,
+  format,
 }: {
   label: string;
-  value: string;
+  value: number;
   loading: boolean;
   icon: React.ReactNode;
+  format?: (n: number) => string;
 }) {
   return (
-    <Card>
-      <CardContent className="flex items-center gap-4 p-5">
-        <div className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-          {icon}
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground">{label}</p>
-          {loading ? (
-            <Skeleton className="mt-1 h-6 w-20" />
-          ) : (
-            <p className="text-xl font-semibold tracking-tight">{value}</p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+    <motion.div
+      whileHover={{ y: -3 }}
+      transition={{ type: "spring", damping: 20, stiffness: 320 }}
+    >
+      <Card>
+        <CardContent className="flex items-center gap-4 p-5">
+          <div className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
+            {icon}
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">{label}</p>
+            {loading ? (
+              <Skeleton className="mt-1 h-6 w-20" />
+            ) : (
+              <CountUp
+                value={value}
+                format={format}
+                className="block text-xl font-semibold tracking-tight"
+              />
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }

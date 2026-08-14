@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
+import { motion } from "framer-motion";
 import { FolderCheck } from "lucide-react";
 import { Container, Section } from "@/components/layout/container";
 import { cn } from "@/lib/utils";
@@ -20,7 +21,13 @@ export function CtaSection() {
   return (
     <Section className="pt-0">
       <Container>
-        <div className="relative overflow-hidden rounded-2xl border border-border bg-primary px-6 py-14 text-center sm:px-16 sm:py-20">
+        <motion.div
+          initial={{ opacity: 0, y: 24, scale: 0.98 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="relative overflow-hidden rounded-2xl border border-border bg-primary px-6 py-14 text-center sm:px-16 sm:py-20"
+        >
           <div
             aria-hidden
             className="pointer-events-none absolute -end-16 -top-16 size-56 rounded-full bg-white/10 blur-2xl"
@@ -54,7 +61,7 @@ export function CtaSection() {
               </Link>
             </div>
           </div>
-        </div>
+        </motion.div>
       </Container>
     </Section>
   );

@@ -44,6 +44,8 @@ export function FeatureGrid() {
             <motion.div
               key={key}
               variants={itemVariants}
+              whileHover={{ y: -4 }}
+              transition={{ type: "spring", damping: 20, stiffness: 320 }}
               className="group rounded-xl border border-border bg-card p-6 transition-colors hover:border-primary/40"
             >
               <span className="flex size-11 items-center justify-center rounded-lg bg-accent text-accent-foreground transition-colors group-hover:bg-primary group-hover:text-primary-foreground">

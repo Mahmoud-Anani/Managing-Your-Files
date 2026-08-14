@@ -76,7 +76,9 @@
   "nav": {
     "home": "Home",
     "about": "About",
+    "terms": "Terms",
     "faq": "FAQ",
+    "privacy": "Privacy",
     "contact": "Contact",
     "profile": "Profile",
     "overview": "Overview",

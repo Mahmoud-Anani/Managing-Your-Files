@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Container } from "@/components/layout/container";
+import { Reveal } from "@/components/motion/reveal";
 import { cn } from "@/lib/utils";
 
 export function StaticPageLayout({
@@ -18,7 +19,7 @@ export function StaticPageLayout({
   return (
     <Container className={className}>
       <div className="mx-auto max-w-3xl">
-        <div className="pb-10 pt-14 text-center sm:pb-14 sm:pt-20">
+        <Reveal className="pb-10 pt-14 text-center sm:pb-14 sm:pt-20">
           {eyebrow ? (
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
               {eyebrow}
@@ -36,7 +37,7 @@ export function StaticPageLayout({
               {intro}
             </p>
           ) : null}
-        </div>
+        </Reveal>
         {children}
       </div>
     </Container>
@@ -51,7 +52,7 @@ export function ProseSection({
   children: ReactNode;
 }) {
   return (
-    <div className="mb-8">
+    <Reveal className="mb-8">
       {title ? (
         <h2 className="mb-2 font-display text-lg font-semibold tracking-tight">
           {title}
@@ -60,6 +61,6 @@ export function ProseSection({
       <div className="space-y-3 text-sm leading-relaxed text-muted-foreground [&_strong]:font-medium [&_strong]:text-foreground">
         {children}
       </div>
-    </div>
+    </Reveal>
   );
 }
