@@ -58,8 +58,8 @@
     "logIn": "تسجيل الدخول"
   },
   "auth": {
-    "loginTitle": "تسجيل الدخول",
-    "loginDescription": "الوصول إلى ملفاتك من خلال حسابك.",
+    "loginTitle": "تسجيل الدخول إلى حسابك",
+    "loginDescription": "أدخل بريدك الإلكتروني وكلمة المرور للمتابعة.",
     "emailVerified": "تم التحقق من بريدك الإلكتروني. يمكنك الآن تسجيل الدخول.",
     "noAccount": "ليس لديك حساب؟",
     "createOne": "أنشئ واحدًا",
@@ -72,7 +72,19 @@
     "didNotGetCode": "لم يصلك رمز؟",
     "alreadyHaveAccount": "لديك حساب بالفعل؟",
     "createAccount": "إنشاء الحساب",
-    "resendIn": "إعادة الإرسال خلال {{count}}ث"
+    "resendIn": "إعادة الإرسال خلال {{count}}ث",
+    "forgotPassword": "نسيت كلمة المرور؟",
+    "forgotPasswordTitle": "نسيت كلمة المرور؟",
+    "forgotPasswordDescription": "أدخل بريدك الإلكتروني وسنرسل لك رمز إعادة التعيين.",
+    "sendResetCode": "إرسال رمز إعادة التعيين",
+    "resetCodeSent": "إذا كان هناك حساب موجود، فقد تم إرسال رمز إعادة التعيين إلى بريدك الإلكتروني.",
+    "enterResetCode": "أدخل رمز إعادة التعيين",
+    "rememberPassword": "هل تتذكر كلمة المرور؟",
+    "resetPasswordTitle": "إعادة تعيين كلمة المرور",
+    "resetPasswordDescription": "أدخل الرمز من بريدك الإلكتروني وكلمة المرور الجديدة.",
+    "resetCode": "رمز إعادة التعيين",
+    "resetPassword": "إعادة تعيين كلمة المرور",
+    "passwordResetSuccess": "تم إعادة تعيين كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول."
   },
   "nav": {
     "home": "الرئيسية",

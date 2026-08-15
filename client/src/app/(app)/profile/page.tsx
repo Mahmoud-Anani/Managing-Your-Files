@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { formatDate } from "@/lib/api";
+import Link, { LinkProps } from "next/link";
 
 function getInitials(name?: string): string {
   if (!name) {
@@ -76,7 +77,9 @@ export default function ProfilePage() {
           icon={<ShieldCheck className="size-4" />}
           label={t("admin.role")}
           value={
-            user?.role === "ADMIN" ? t("profile.adminRole") : t("profile.userRole")
+            user?.role === "ADMIN"
+              ? t("profile.adminRole")
+              : t("profile.userRole")
           }
         />
         <DetailRow
@@ -87,11 +90,13 @@ export default function ProfilePage() {
         <DetailRow
           icon={<BadgeCheck className="size-4" />}
           label={t("admin.status")}
-          value={
-            user?.isVerified
-              ? t("admin.verified")
-              : t("admin.unverified")
-          }
+          value={user?.isVerified ? t("admin.verified") : t("admin.unverified")}
+        />
+        <DetailRow
+          icon={<BadgeCheck className="size-4" />}
+          label={t("auth.resetPasswordTitle")}
+          value={t("auth.resetPassword")}
+          link={"/forgot-password"}
         />
       </Card>
 
@@ -107,10 +112,12 @@ function DetailRow({
   icon,
   label,
   value,
+  link,
 }: {
   icon: React.ReactNode;
   label: string;
   value?: string;
+  link?: string;
 }) {
   return (
     <div className="flex items-center gap-3 px-6 py-4">
@@ -119,7 +126,12 @@ function DetailRow({
       </span>
       <span className="text-sm text-muted-foreground">{label}</span>
       <span className="ms-auto truncate text-sm font-medium text-foreground">
-        {value ?? "—"}
+        {!link && value }
+        {link && (
+          <Link href={link as LinkProps["href"]} className="ms-2 text-primary">
+            {value}
+          </Link>
+        )}
       </span>
     </div>
   );
