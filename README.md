@@ -180,6 +180,8 @@ Managing-Your-Files/
 
 All endpoints are mounted under the `/api/v1` prefix. Interactive docs: `GET /api/v1/docs` (Swagger UI) and `GET /api/v1/docs.json` (raw spec).
 
+Production docs: https://managing-your-files-production.up.railway.app/api/v1/docs/
+
 | Method   | Path                 | Access | Description                                                  |
 | -------- | -------------------- | ------ | ------------------------------------------------------------ |
 | `POST`   | `/auth/register`     | public | Create account; emails a 6-digit verification code           |
