@@ -98,8 +98,11 @@
     "privacy": "Privacy",
     "contact": "Contact",
     "profile": "Profile",
+    "settings": "Settings",
     "overview": "Overview",
     "files": "Files",
+    "shared": "Shared",
+    "storage": "Storage",
     "admin": "Admin",
     "users": "Users",
     "auditLogs": "Audit logs",
@@ -316,7 +319,7 @@
     },
     "sharing": {
       "question": "Can I share files with other people?",
-      "answer": "Not yet — sharing is on the roadmap. For now, every file stays private to your account."
+      "answer": "Yes — you can share files with other users on the platform. You control whether they can only view or also edit your files."
     }
   },
   "profile": {
@@ -326,6 +329,24 @@
     "userRole": "Member",
     "memberSince": "Member since",
     "manageHint": "Need to change account details? Contact an administrator."
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage your account settings.",
+    "profileSection": "Profile",
+    "profileUpdated": "Profile updated successfully.",
+    "emailReadonly": "Email cannot be changed from here.",
+    "saveProfile": "Save profile",
+    "passwordSection": "Password",
+    "passwordChanged": "Password changed successfully.",
+    "currentPassword": "Current password",
+    "changePassword": "Change password",
+    "dangerZone": "Danger zone",
+    "deleteDescription": "Permanently delete your account and all associated files. This action cannot be undone.",
+    "deleteAccount": "Delete account",
+    "deleteConfirmTitle": "Delete account",
+    "deleteConfirmDescription": "This will permanently delete your account and all files. Enter your password to confirm.",
+    "deleteForever": "Delete forever"
   },
   "dashboard": {
     "welcomeBack": "Welcome back, {{name}}",
@@ -341,6 +362,20 @@
     "uploadFirstFile": "Upload your first file",
     "dailyUploads": "Daily uploads",
     "dailyUploadsDescription": "Files uploaded over the last {{days}} days."
+  },
+  "storage": {
+    "title": "Storage",
+    "subtitle": "Detailed breakdown of your storage usage.",
+    "totalFiles": "Total files",
+    "totalStorage": "Total storage",
+    "storageByType": "Storage by type",
+    "storageByTypeDescription": "How much space each file type uses.",
+    "fileCount": "files",
+    "noFiles": "No files yet.",
+    "largestFiles": "Largest files",
+    "largestFilesDescription": "Your biggest files by size.",
+    "recentUploads": "Recent uploads",
+    "recentUploadsDescription": "Your most recently uploaded files."
   },
   "files": {
     "title": "Files",
@@ -392,12 +427,46 @@
     "purgeLabel": "Permanently delete {{name}}",
     "previewLabel": "Preview {{name}}",
     "downloadLabel": "Download {{name}}",
+    "shareLabel": "Share {{name}}",
+    "share": "Share",
     "download": "Download",
     "downloadFailed": "Download failed.",
     "preview": "Preview",
     "previewLoadError": "Could not load the preview.",
     "previewUnsupported": "This file type cannot be previewed here. Use Download instead.",
     "deleteConfirmTrash": "Move \"{{name}}\" to trash? You can restore it later."
+  },
+  "sharing": {
+    "title": "Shared Files",
+    "subtitle": "Files shared with you and by you.",
+    "sharedWithMe": "Shared with me",
+    "sharedByMe": "Shared by me",
+    "noSharedWithMe": "No files shared with you",
+    "noSharedByMe": "You haven't shared any files",
+    "noSharedWithMeHint": "When others share files with you, they'll appear here.",
+    "noSharedByMeHint": "Share a file from the Files page to get started.",
+    "sharedBy": "Shared by",
+    "sharedWith": "Shared with",
+    "permission": "Permission",
+    "view": "View",
+    "edit": "Edit",
+    "sharedOn": "Shared on",
+    "shareFile": "Share file",
+    "shareWithEmail": "Share with email",
+    "emailPlaceholder": "user@example.com",
+    "permissionLabel": "Permission",
+    "viewOnly": "View only",
+    "canEdit": "Can edit",
+    "shareButton": "Share",
+    "shareSuccess": "File shared successfully.",
+    "shareFailed": "Could not share the file.",
+    "unshareButton": "Remove",
+    "unshareConfirm": "Remove access for this user?",
+    "unshareSuccess": "Share removed.",
+    "unshareFailed": "Could not remove share.",
+    "userNotFound": "No user found with this email.",
+    "alreadyShared": "File is already shared with this user.",
+    "cannotShareWithSelf": "You cannot share a file with yourself."
   },
   "admin": {
     "title": "Admin",

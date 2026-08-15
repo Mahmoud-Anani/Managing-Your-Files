@@ -12,6 +12,7 @@ import usersRoutes from './modules/users/users.routes';
 import { adminFilesRouter, filesRouter } from './modules/files/files.routes';
 import auditRoutes from './modules/audit/audit.routes';
 import statsRoutes from './modules/stats/stats.routes';
+import sharingRoutes from './modules/sharing/sharing.routes';
 import { swaggerRouter } from './docs/swagger.routes';
 
 const app = express();
@@ -38,6 +39,7 @@ apiRouter.use('/files', filesRouter);
 apiRouter.use('/admin/files', adminFilesRouter);
 apiRouter.use('/admin/audit-logs', auditRoutes);
 apiRouter.use('/stats', statsRoutes);
+apiRouter.use('/sharing', sharingRoutes);
 apiRouter.use('/', swaggerRouter);
 
 app.use('/api/v1', apiRouter);

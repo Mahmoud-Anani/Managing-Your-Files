@@ -12,6 +12,11 @@ enum Role {
   ADMIN
 }
 
+enum Permission {
+  VIEW
+  EDIT
+}
+
 model User {
   id                String             @id @default(uuid())
   name              String
@@ -25,6 +30,8 @@ model User {
   auditLogs         AuditLog[]
   refreshTokens     RefreshToken[]
   verificationCodes VerificationCode[]
+  sharedFiles       FileShare[]        @relation("SharedBy")
+  receivedShares    FileShare[]        @relation("SharedWith")
 
   @@map("users")
 }
@@ -72,7 +79,7 @@ model VerificationCode {
 }
 
 model File {
-  id            String    @id @default(uuid())
+  id            String       @id @default(uuid())
   originalName  String
   storedName    String
   mimeType      String
@@ -81,10 +88,28 @@ model File {
   url           String
   extractedText String?
   userId        String
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shares        FileShare[]
   deletedAt     DateTime?
-  createdAt     DateTime  @default(now())
+  createdAt     DateTime     @default(now())
 
   @@index([userId])
   @@map("files")
+}
+
+model FileShare {
+  id           String     @id @default(uuid())
+  fileId       String
+  file         File       @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  sharedById   String
+  sharedBy     User       @relation("SharedBy", fields: [sharedById], references: [id], onDelete: Cascade)
+  sharedWithId String
+  sharedWith   User       @relation("SharedWith", fields: [sharedWithId], references: [id], onDelete: Cascade)
+  permission   Permission @default(VIEW)
+  createdAt    DateTime   @default(now())
+
+  @@unique([fileId, sharedWithId])
+  @@index([sharedWithId])
+  @@index([sharedById])
+  @@map("file_shares")
 }

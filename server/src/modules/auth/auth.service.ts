@@ -15,11 +15,14 @@ import { sendVerificationEmail, sendPasswordResetEmail } from '../../common/emai
 import { toSafeUserDto, type SafeUserDto } from '../../common/user-mapper';
 import { AuditService, type AuditContext } from '../audit/audit.service';
 import type {
+  ChangePasswordDto,
+  DeleteAccountDto,
   ForgotPasswordDto,
   LoginDto,
   RegisterDto,
   ResendCodeDto,
   ResetPasswordDto,
+  UpdateProfileDto,
   VerifyEmailDto,
 } from './auth.dto';
 
@@ -240,6 +243,81 @@ export class AuthService {
       throw new NotFoundError('User not found');
     }
     return toSafeUserDto(user);
+  }
+
+  async updateProfile(
+    userId: string,
+    dto: UpdateProfileDto,
+  ): Promise<SafeUserDto> {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { name: dto.name },
+    });
+
+    return toSafeUserDto(updated);
+  }
+
+  async changePassword(
+    userId: string,
+    dto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    const passwordMatches = await bcrypt.compare(
+      dto.currentPassword,
+      user.password,
+    );
+    if (!passwordMatches) {
+      throw new UnauthorizedError('Current password is incorrect');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.newPassword, 12);
+
+    await prisma.$transaction([
+      prisma.refreshToken.deleteMany({ where: { userId } }),
+      prisma.user.update({
+        where: { id: userId },
+        data: { password: passwordHash },
+      }),
+    ]);
+
+    return { message: 'Password changed successfully' };
+  }
+
+  async deleteAccount(
+    userId: string,
+    dto: DeleteAccountDto,
+    res: Response,
+  ): Promise<{ message: string }> {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    const passwordMatches = await bcrypt.compare(dto.password, user.password);
+    if (!passwordMatches) {
+      throw new UnauthorizedError('Password is incorrect');
+    }
+
+    await prisma.$transaction([
+      prisma.refreshToken.deleteMany({ where: { userId } }),
+      prisma.verificationCode.deleteMany({ where: { userId } }),
+      prisma.file.deleteMany({ where: { userId } }),
+      prisma.auditLog.deleteMany({ where: { userId } }),
+      prisma.user.delete({ where: { id: userId } }),
+    ]);
+
+    clearTokenCookies(res);
+
+    return { message: 'Account deleted successfully' };
   }
 
   async forgotPassword(

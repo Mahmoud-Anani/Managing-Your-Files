@@ -7,11 +7,14 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import {
   FileText,
+  HardDrive,
   LayoutDashboard,
   LogOut,
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
+  Settings,
+  Share2,
   ShieldCheck,
   User,
   X,
@@ -52,6 +55,9 @@ function AppShell({ children }: { children: React.ReactNode }) {
   const navItems: NavItem[] = [
     { href: "/dashboard", label: t("nav.overview"), icon: LayoutDashboard },
     { href: "/files", label: t("nav.files"), icon: FileText },
+    { href: "/shared", label: t("nav.shared"), icon: Share2 },
+    { href: "/storage", label: t("nav.storage"), icon: HardDrive },
+    { href: "/settings", label: t("nav.settings"), icon: Settings },
     { href: "/profile", label: t("nav.profile"), icon: User },
   ];
 

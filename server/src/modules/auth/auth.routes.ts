@@ -3,17 +3,23 @@ import { asyncHandler, validateBody } from '../../common/async-handler';
 import { authGuard } from '../../common/guards';
 import { AuthController } from './auth.controller';
 import {
+  changePasswordSchema,
+  deleteAccountSchema,
   forgotPasswordSchema,
   loginSchema,
   registerSchema,
   resendCodeSchema,
   resetPasswordSchema,
+  updateProfileSchema,
   verifyEmailSchema,
+  type ChangePasswordDto,
+  type DeleteAccountDto,
   type ForgotPasswordDto,
   type LoginDto,
   type RegisterDto,
   type ResendCodeDto,
   type ResetPasswordDto,
+  type UpdateProfileDto,
   type VerifyEmailDto,
 } from './auth.dto';
 import { resendRateLimit } from './auth.middleware';
@@ -85,6 +91,33 @@ router.get(
   '/profile',
   authGuard,
   asyncHandler((req, res) => controller.profile(req, res)),
+);
+
+router.put(
+  '/profile',
+  authGuard,
+  validateBody(updateProfileSchema),
+  asyncHandler((req, res) =>
+    controller.updateProfile(req, res),
+  ),
+);
+
+router.put(
+  '/password',
+  authGuard,
+  validateBody(changePasswordSchema),
+  asyncHandler((req, res) =>
+    controller.changePassword(req, res),
+  ),
+);
+
+router.delete(
+  '/account',
+  authGuard,
+  validateBody(deleteAccountSchema),
+  asyncHandler((req, res) =>
+    controller.deleteAccount(req, res),
+  ),
 );
 
 export default router;

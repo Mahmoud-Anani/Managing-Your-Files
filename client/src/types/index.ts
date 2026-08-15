@@ -127,3 +127,20 @@ export interface ListFilesQuery {
 export interface AdminListFilesQuery extends ListFilesQuery {
   userId?: string;
 }
+
+export interface SharedFileDto {
+  id: string;
+  file: {
+    id: string;
+    originalName: string;
+    mimeType: string;
+    size: number;
+    extension: string;
+    url: string;
+    createdAt: string;
+  };
+  sharedBy: { id: string; name: string; email: string };
+  sharedWith: { id: string; name: string; email: string };
+  permission: "VIEW" | "EDIT";
+  createdAt: string;
+}

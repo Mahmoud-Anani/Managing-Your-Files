@@ -3,11 +3,14 @@ import { getAuthUser } from '../../common/guards';
 import { AuthService } from './auth.service';
 import type { AuditContext } from '../audit/audit.service';
 import type {
+  ChangePasswordDto,
+  DeleteAccountDto,
   ForgotPasswordDto,
   LoginDto,
   RegisterDto,
   ResendCodeDto,
   ResetPasswordDto,
+  UpdateProfileDto,
   VerifyEmailDto,
 } from './auth.dto';
 
@@ -81,6 +84,33 @@ export class AuthController {
   async profile(req: Request, res: Response): Promise<void> {
     const user = getAuthUser(req);
     const result = await authService.getProfile(user.id);
+    res.json(result);
+  }
+
+  async updateProfile(
+    req: Request,
+    res: Response,
+  ): Promise<void> {
+    const user = getAuthUser(req);
+    const result = await authService.updateProfile(user.id, req.body as UpdateProfileDto);
+    res.json(result);
+  }
+
+  async changePassword(
+    req: Request,
+    res: Response,
+  ): Promise<void> {
+    const user = getAuthUser(req);
+    const result = await authService.changePassword(user.id, req.body as ChangePasswordDto);
+    res.json(result);
+  }
+
+  async deleteAccount(
+    req: Request,
+    res: Response,
+  ): Promise<void> {
+    const user = getAuthUser(req);
+    const result = await authService.deleteAccount(user.id, req.body as DeleteAccountDto, res);
     res.json(result);
   }
 

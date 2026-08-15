@@ -11,6 +11,7 @@ import {
   FileText,
   Eye,
   Download,
+  Share2,
   Image as ImageIcon,
 } from "lucide-react";
 
@@ -36,6 +37,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FilePreviewDialog } from "@/components/files/file-preview-dialog";
+import { ShareDialog } from "@/components/share-dialog";
 import { useToast } from "@/components/ui/toast";
 
 const PAGE_SIZE = 10;
@@ -121,6 +123,7 @@ export default function FilesPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [deleteTarget, setDeleteTarget] = useState<SafeFileDto | null>(null);
   const [previewTarget, setPreviewTarget] = useState<SafeFileDto | null>(null);
+  const [shareTarget, setShareTarget] = useState<SafeFileDto | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -472,6 +475,16 @@ export default function FilesPage() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label={t("files.shareLabel", {
+                              name: file.originalName,
+                            })}
+                            onClick={() => setShareTarget(file)}
+                          >
+                            <Share2 className="size-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             aria-label={t("files.deleteLabel", {
                               name: file.originalName,
                             })}
@@ -526,6 +539,20 @@ export default function FilesPage() {
           if (!open) {
             setPreviewTarget(null);
           }
+        }}
+      />
+
+      <ShareDialog
+        open={Boolean(shareTarget)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShareTarget(null);
+          }
+        }}
+        fileId={shareTarget?.id ?? ""}
+        fileName={shareTarget?.originalName ?? ""}
+        onShared={() => {
+          setShareTarget(null);
         }}
       />
     </div>
