@@ -39,6 +39,101 @@ export const ALLOWED_MIME_TYPES: ReadonlySet<string> = new Set([
   'application/x-yaml',
 ]);
 
+const ALLOWED_EXTENSIONS: ReadonlySet<string> = new Set([
+  // Images
+  'png',
+  'jpg',
+  'jpeg',
+  'gif',
+  'webp',
+  'bmp',
+  'svg',
+  // Documents
+  'pdf',
+  'doc',
+  'docx',
+  'odt',
+  'rtf',
+  // Spreadsheets
+  'xls',
+  'xlsx',
+  // Presentations
+  'ppt',
+  'pptx',
+  // Text & data
+  'txt',
+  'md',
+  'markdown',
+  'csv',
+  'html',
+  'htm',
+  'xml',
+  'yaml',
+  'yml',
+  'json',
+  'log',
+]);
+
+function extensionOf(originalName: string): string {
+  return originalName.split('.').pop()?.toLowerCase() ?? '';
+}
+
+const EXTENSION_TO_MIME: Readonly<Record<string, string>> = {
+  // Images
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  bmp: 'image/bmp',
+  svg: 'image/svg+xml',
+  // Documents
+  pdf: 'application/pdf',
+  doc: 'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  odt: 'application/vnd.oasis.opendocument.text',
+  rtf: 'application/rtf',
+  // Spreadsheets
+  xls: 'application/vnd.ms-excel',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  // Presentations
+  ppt: 'application/vnd.ms-powerpoint',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  // Text & data
+  txt: 'text/plain',
+  md: 'text/markdown',
+  markdown: 'text/markdown',
+  csv: 'text/csv',
+  html: 'text/html',
+  htm: 'text/html',
+  xml: 'text/xml',
+  yaml: 'text/yaml',
+  yml: 'text/yaml',
+  json: 'application/json',
+  log: 'text/plain',
+};
+
+/**
+ * Browsers sometimes send an empty or inaccurate MIME type (e.g.
+ * `application/octet-stream` for `.md`/`.svg`). When that happens, fall back
+ * to a canonical type derived from the file extension so preview, download and
+ * Cloudinary resource-type selection keep working.
+ */
+export function normalizeMimeType(
+  originalName: string,
+  reportedMime: string,
+): string {
+  const trimmed = reportedMime.trim().toLowerCase();
+  if (
+    trimmed !== '' &&
+    trimmed !== 'application/octet-stream' &&
+    trimmed !== 'application/unknown'
+  ) {
+    return trimmed;
+  }
+  return EXTENSION_TO_MIME[extensionOf(originalName)] ?? reportedMime;
+}
+
 const storage = multer.memoryStorage();
 
 export const upload = multer({
@@ -48,8 +143,10 @@ export const upload = multer({
     files: MAX_FILES_PER_UPLOAD,
   },
   fileFilter: (_req, file, cb) => {
-    if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
-      cb(new ValidationError(`File type ${file.mimetype} is not allowed`));
+    const ext = extensionOf(file.originalname);
+    const allowed = ALLOWED_MIME_TYPES.has(file.mimetype) || ALLOWED_EXTENSIONS.has(ext);
+    if (!allowed) {
+      cb(new ValidationError(`File type ${file.mimetype || ext || 'unknown'} is not allowed`));
       return;
     }
     cb(null, true);

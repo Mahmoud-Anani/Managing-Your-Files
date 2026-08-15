@@ -70,6 +70,10 @@ const ACCEPTED_FILE_TYPES = [
   "application/json",
   "application/xml",
   "application/x-yaml",
+  // MD files
+  "text/markdown",
+  "text/x-markdown",
+  "application/markdown",
 ];
 
 const ACCEPTED_EXTENSIONS = new Set([
@@ -99,6 +103,7 @@ const ACCEPTED_EXTENSIONS = new Set([
   "json",
   "yaml",
   "yml",
+  "log",
 ]);
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB

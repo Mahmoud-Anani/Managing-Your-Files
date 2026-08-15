@@ -19,7 +19,7 @@ export function CtaSection() {
   const { t } = useTranslation();
 
   return (
-    <Section className="pt-0">
+    <Section className="">
       <Container>
         <motion.div
           initial={{ opacity: 0, y: 24, scale: 0.98 }}
@@ -30,11 +30,11 @@ export function CtaSection() {
         >
           <div
             aria-hidden
-            className="pointer-events-none absolute -end-16 -top-16 size-56 rounded-full bg-white/10 blur-2xl"
+            className="pointer-events-none absolute -inset-e-16 -top-16 size-56 rounded-full bg-white/10 blur-2xl"
           />
           <div
             aria-hidden
-            className="pointer-events-none absolute -bottom-20 -start-10 size-64 rounded-full bg-white/10 blur-3xl"
+            className="pointer-events-none absolute -bottom-20 -inset-s-10 size-64 rounded-full bg-white/10 blur-3xl"
           />
           <div className="relative mx-auto max-w-2xl">
             <span className="mx-auto flex size-12 items-center justify-center rounded-xl bg-white/15">

@@ -8,6 +8,7 @@ import {
   deleteFromCloudinary,
   uploadToCloudinary,
 } from '../../common/cloudinary';
+import { normalizeMimeType } from '../../common/multer';
 import {
   toFileDetailDto,
   toSafeFileDto,
@@ -74,9 +75,10 @@ export class FilesService {
           .pop()
           ?.toLowerCase()
           .replace(/[^a-z0-9]/g, '') ?? '';
+        const mimeType = normalizeMimeType(file.originalname, file.mimetype);
         const extractedText = await extractText({
           buffer: file.buffer,
-          mimeType: file.mimetype,
+          mimeType,
           extension,
         });
 
@@ -84,14 +86,14 @@ export class FilesService {
         const uploaded = await uploadToCloudinary({
           buffer: file.buffer,
           publicId,
-          mimeType: file.mimetype,
+          mimeType,
         });
 
         const record = await prisma.file.create({
           data: {
             originalName: file.originalname,
             storedName: uploaded.publicId,
-            mimeType: file.mimetype,
+            mimeType,
             size: file.size,
             extension,
             url: uploaded.secureUrl,

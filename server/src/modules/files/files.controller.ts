@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { getAuthUser } from '../../common/guards';
-import { ValidationError, NotFoundError } from '../../common/errors';
+import { ValidationError } from '../../common/errors';
 import { FilesService } from './files.service';
 import type { AuditContext } from '../audit/audit.service';
 import type { AdminListFilesQueryDto, ListFilesQueryDto } from './files.dto';
@@ -38,11 +38,11 @@ async function streamCloudinary(
   const FETCH_TIMEOUT_MS = 10000; // 10s
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
-  let upstream: Response | undefined;
+  let upstream: Awaited<ReturnType<typeof fetch>> | undefined;
   try {
     // Use the global fetch (undici) available in Node.
     upstream = await fetch(file.url, { signal: controller.signal });
-  } catch (err) {
+  } catch {
     clearTimeout(timeout);
     // Network error / timeout — fall back to redirect so the user still gets the file
     res.setHeader('Cache-Control', 'private, no-store');
