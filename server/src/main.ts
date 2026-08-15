@@ -54,6 +54,7 @@ async function start(): Promise<void> {
     await connectWithRetry();
     server = app.listen(env.PORT, () => {
       const base = `http://localhost:${env.PORT}`;
+      console.warn(`[Server] Running on ${env.NODE_ENV} mode`);
       console.warn(`[Server] Running on ${base}`);
       console.warn(`[Server] Swagger UI  → ${base}/api/v1/docs`);
       console.warn(`[Server] Swagger JSON → ${base}/api/v1/docs.json`);
