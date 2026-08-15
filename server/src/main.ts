@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import cors from 'cors';
 import express from 'express';
+import cookieParser from 'cookie-parser';
 import { env } from './config/env';
 import { prisma } from './config/prisma';
 import { errorHandler } from './common/error-handler';
@@ -22,6 +23,7 @@ app.use(
   }),
 );
 app.use(requestLogger);
+app.use(cookieParser());
 app.use(express.json({ limit: '1mb' }));
 
 const apiRouter = express.Router();

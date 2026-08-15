@@ -50,6 +50,16 @@ router.post(
   ),
 );
 
+router.post(
+  '/refresh',
+  asyncHandler((req, res) => controller.refresh(req, res)),
+);
+
+router.post(
+  '/logout',
+  asyncHandler((req, res) => controller.logout(req, res)),
+);
+
 router.get(
   '/profile',
   authGuard,

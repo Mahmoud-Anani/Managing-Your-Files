@@ -6,8 +6,9 @@ import { env } from '../config/env';
 import { ForbiddenError, UnauthorizedError } from './errors';
 import type { ExpressMiddleware } from './async-handler';
 
-interface JwtPayload {
+interface AccessTokenPayload {
   userId: string;
+  role: string;
 }
 
 export function getAuthUser(req: Request): User {
@@ -22,16 +23,16 @@ export function authGuard(
   _res: Response,
   next: NextFunction,
 ): void {
-  const header = req.headers.authorization;
-  if (!header || !header.startsWith('Bearer ')) {
+  const cookies = req.cookies as Record<string, string> | undefined;
+  const token = cookies?.access_token;
+  if (!token) {
     next(new UnauthorizedError('Authentication required'));
     return;
   }
 
-  const token = header.slice('Bearer '.length).trim();
-  let payload: JwtPayload;
+  let payload: AccessTokenPayload;
   try {
-    payload = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
+    payload = jwt.verify(token, env.JWT_SECRET) as AccessTokenPayload;
   } catch {
     next(new UnauthorizedError('Invalid or expired token'));
     return;

@@ -13,6 +13,13 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z
     .string()
     .regex(/^\d+[smhdw]$/, 'JWT_EXPIRES_IN must look like 7d, 30m, 3600s')
+    .default('15m'),
+  JWT_REFRESH_SECRET: z
+    .string()
+    .min(16, 'JWT_REFRESH_SECRET must be at least 16 characters'),
+  JWT_REFRESH_EXPIRES_IN: z
+    .string()
+    .regex(/^\d+[smhdw]$/, 'JWT_REFRESH_EXPIRES_IN must look like 7d, 30m, 3600s')
     .default('7d'),
   ADMIN_EMAIL: z.string().email().default('admin@example.com'),
   ADMIN_NAME: z.string().min(1).default('Admin'),

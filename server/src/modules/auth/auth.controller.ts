@@ -51,10 +51,29 @@ export class AuthController {
     res: Response,
   ): Promise<void> {
     const result = await authService.login(
+      res,
       req.body,
       auditContextFrom(req as Request),
     );
     res.json(result);
+  }
+
+  async refresh(req: Request, res: Response): Promise<void> {
+    const cookies = req.cookies as Record<string, string> | undefined;
+    const refreshToken = cookies?.refresh_token;
+    if (!refreshToken) {
+      res.status(401).json({ message: 'Refresh token not found' });
+      return;
+    }
+    const result = await authService.refresh(res, refreshToken);
+    res.json(result);
+  }
+
+  async logout(req: Request, res: Response): Promise<void> {
+    const cookies = req.cookies as Record<string, string> | undefined;
+    const refreshToken = cookies?.refresh_token;
+    await authService.logout(res, refreshToken);
+    res.json({ message: 'Logged out successfully' });
   }
 
   async profile(req: Request, res: Response): Promise<void> {

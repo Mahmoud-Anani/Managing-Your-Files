@@ -40,42 +40,100 @@ function toApiError(error: unknown): ApiError {
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080",
   timeout: 30000,
+  withCredentials: true,
 });
 
-// Upload requests need a longer timeout (multiple files to Cloudinary)
 export const uploadApi = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080",
   timeout: 120000,
+  withCredentials: true,
 });
 
-api.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") {
-    const token = window.localStorage.getItem("myf.token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  }
-  return config;
-});
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value: unknown) => void;
+  reject: (reason?: unknown) => void;
+}> = [];
 
-uploadApi.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") {
-    const token = window.localStorage.getItem("myf.token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+function processQueue(error: unknown): void {
+  failedQueue.forEach((promise) => {
+    if (error) {
+      promise.reject(error);
+    } else {
+      promise.resolve(undefined);
     }
-  }
-  return config;
-});
+  });
+  failedQueue = [];
+}
 
 api.interceptors.response.use(
   (response) => response,
-  (error: unknown) => Promise.reject(toApiError(error)),
+  async (error: unknown) => {
+    const axiosError = error as AxiosError;
+
+    if (axiosError.response?.status === 401 && !axiosError.config?.url?.includes("/auth/")) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(() => api(axiosError.config!))
+          .catch((err) => Promise.reject(toApiError(err)));
+      }
+
+      isRefreshing = true;
+
+      try {
+        await api.post("/auth/refresh");
+        processQueue(null);
+        return api(axiosError.config!);
+      } catch (refreshError) {
+        processQueue(refreshError);
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+        return Promise.reject(toApiError(refreshError));
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
+    return Promise.reject(toApiError(error));
+  },
 );
 
 uploadApi.interceptors.response.use(
   (response) => response,
-  (error: unknown) => Promise.reject(toApiError(error)),
+  async (error: unknown) => {
+    const axiosError = error as AxiosError;
+
+    if (axiosError.response?.status === 401 && !axiosError.config?.url?.includes("/auth/")) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(() => uploadApi(axiosError.config!))
+          .catch((err) => Promise.reject(toApiError(err)));
+      }
+
+      isRefreshing = true;
+
+      try {
+        await api.post("/auth/refresh");
+        processQueue(null);
+        return uploadApi(axiosError.config!);
+      } catch (refreshError) {
+        processQueue(refreshError);
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+        return Promise.reject(toApiError(refreshError));
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
+    return Promise.reject(toApiError(error));
+  },
 );
 
 export function formatBytes(bytes: number): string {

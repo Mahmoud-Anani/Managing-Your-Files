@@ -1,3 +1,4 @@
+import type { Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import type { User } from '@prisma/client';
@@ -28,8 +29,44 @@ interface RegisterResult {
 }
 
 export interface AuthResponse {
-  token: string;
   user: SafeUserDto;
+}
+
+interface AccessTokenPayload {
+  userId: string;
+  role: string;
+}
+
+const ACCESS_TOKEN_EXPIRY = '15m';
+const REFRESH_TOKEN_EXPIRY = '7d';
+const REFRESH_TOKEN_DAYS = 7;
+
+export const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  path: '/',
+};
+
+export function setTokenCookies(
+  res: Response,
+  accessToken: string,
+  refreshToken: string,
+): void {
+  res.cookie('access_token', accessToken, {
+    ...COOKIE_OPTIONS,
+    maxAge: 15 * 60 * 1000, // 15 minutes
+  });
+
+  res.cookie('refresh_token', refreshToken, {
+    ...COOKIE_OPTIONS,
+    maxAge: REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000, // 7 days
+  });
+}
+
+export function clearTokenCookies(res: Response): void {
+  res.clearCookie('access_token', { ...COOKIE_OPTIONS });
+  res.clearCookie('refresh_token', { ...COOKIE_OPTIONS });
 }
 
 export class AuthService {
@@ -117,7 +154,11 @@ export class AuthService {
     return { message: 'Verification code sent' };
   }
 
-  async login(dto: LoginDto, ctx?: AuditContext): Promise<AuthResponse> {
+  async login(
+    res: Response,
+    dto: LoginDto,
+    ctx?: AuditContext,
+  ): Promise<AuthResponse> {
     const user = await prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -135,7 +176,10 @@ export class AuthService {
       );
     }
 
-    const token = this.signToken(user);
+    const accessToken = this.signAccessToken(user);
+    const refreshToken = await this.createRefreshToken(user.id);
+
+    setTokenCookies(res, accessToken, refreshToken);
 
     await auditService.log({
       userId: user.id,
@@ -146,7 +190,46 @@ export class AuthService {
       ctx,
     });
 
-    return { token, user: toSafeUserDto(user) };
+    return { user: toSafeUserDto(user) };
+  }
+
+  async refresh(
+    res: Response,
+    refreshToken: string,
+  ): Promise<AuthResponse> {
+    try {
+      jwt.verify(refreshToken, env.JWT_REFRESH_SECRET);
+    } catch {
+      throw new UnauthorizedError('Invalid or expired refresh token');
+    }
+
+    const storedToken = await prisma.refreshToken.findUnique({
+      where: { token: refreshToken },
+      include: { user: true },
+    });
+    if (!storedToken) {
+      throw new UnauthorizedError('Refresh token not found');
+    }
+    if (storedToken.expiresAt < new Date()) {
+      await prisma.refreshToken.delete({ where: { id: storedToken.id } });
+      throw new UnauthorizedError('Refresh token expired');
+    }
+
+    const newAccessToken = this.signAccessToken(storedToken.user);
+    const newRefreshToken = await this.createRefreshToken(storedToken.user.id);
+
+    await prisma.refreshToken.delete({ where: { id: storedToken.id } });
+
+    setTokenCookies(res, newAccessToken, newRefreshToken);
+
+    return { user: toSafeUserDto(storedToken.user) };
+  }
+
+  async logout(res: Response, refreshToken?: string): Promise<void> {
+    if (refreshToken) {
+      await prisma.refreshToken.deleteMany({ where: { token: refreshToken } });
+    }
+    clearTokenCookies(res);
   }
 
   async getProfile(userId: string): Promise<SafeUserDto> {
@@ -157,12 +240,34 @@ export class AuthService {
     return toSafeUserDto(user);
   }
 
-  private signToken(user: User): string {
-    return jwt.sign(
-      { userId: user.id, role: user.role },
-      env.JWT_SECRET,
-      { expiresIn: env.JWT_EXPIRES_IN as jwt.SignOptions['expiresIn'] },
+  private signAccessToken(user: User): string {
+    const payload: AccessTokenPayload = {
+      userId: user.id,
+      role: user.role,
+    };
+    return jwt.sign(payload, env.JWT_SECRET, {
+      expiresIn: ACCESS_TOKEN_EXPIRY,
+    });
+  }
+
+  private async createRefreshToken(userId: string): Promise<string> {
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000);
+
+    const token = jwt.sign(
+      { userId, tokenVersion: Date.now() },
+      env.JWT_REFRESH_SECRET,
+      { expiresIn: REFRESH_TOKEN_EXPIRY },
     );
+
+    await prisma.refreshToken.create({
+      data: {
+        token,
+        userId,
+        expiresAt,
+      },
+    });
+
+    return token;
   }
 
   private async issueVerificationCode(
