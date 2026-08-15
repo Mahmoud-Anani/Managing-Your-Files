@@ -4,6 +4,7 @@ export interface SafeUserDto {
   id: string;
   name: string;
   email: string;
+  avatar: string | null;
   role: Role;
   isVerified: boolean;
   createdAt: string;

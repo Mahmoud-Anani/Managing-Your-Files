@@ -1,4 +1,5 @@
 import { Router, type Request } from 'express';
+import multer from 'multer';
 import { asyncHandler, validateBody } from '../../common/async-handler';
 import { authGuard } from '../../common/guards';
 import { AuthController } from './auth.controller';
@@ -91,6 +92,25 @@ router.get(
   '/profile',
   authGuard,
   asyncHandler((req, res) => controller.profile(req, res)),
+);
+
+const avatarUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  },
+});
+
+router.post(
+  '/avatar',
+  authGuard,
+  avatarUpload.single('avatar'),
+  asyncHandler((req, res) => controller.uploadAvatar(req, res)),
 );
 
 router.put(

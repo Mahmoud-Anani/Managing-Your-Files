@@ -346,7 +346,11 @@
     "deleteAccount": "Delete account",
     "deleteConfirmTitle": "Delete account",
     "deleteConfirmDescription": "This will permanently delete your account and all files. Enter your password to confirm.",
-    "deleteForever": "Delete forever"
+    "deleteForever": "Delete forever",
+    "avatarSection": "Avatar",
+    "avatarUpdated": "Avatar updated successfully.",
+    "uploadAvatar": "Upload avatar",
+    "avatarHint": "JPG, PNG or GIF. Max 5 MB."
   },
   "dashboard": {
     "welcomeBack": "Welcome back, {{name}}",

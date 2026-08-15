@@ -13,6 +13,7 @@ import {
 import { generateOtpCode, OTP_TTL_MS } from '../../common/otp';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../../common/email';
 import { toSafeUserDto, type SafeUserDto } from '../../common/user-mapper';
+import { uploadToCloudinary, deleteFromCloudinary, cloudinaryPublicId } from '../../common/cloudinary';
 import { AuditService, type AuditContext } from '../audit/audit.service';
 import type {
   ChangePasswordDto,
@@ -257,6 +258,41 @@ export class AuthService {
     const updated = await prisma.user.update({
       where: { id: userId },
       data: { name: dto.name },
+    });
+
+    return toSafeUserDto(updated);
+  }
+
+  async uploadAvatar(
+    userId: string,
+    file: { buffer: Buffer; mimetype: string },
+  ): Promise<SafeUserDto> {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    if (user.avatar) {
+      const parts = user.avatar.split('/');
+      const publicIdWithExt = parts.slice(parts.indexOf('upload') + 1).join('/');
+      const publicId = publicIdWithExt.replace(/\.[^.]+$/, '');
+      try {
+        await deleteFromCloudinary(publicId, 'image');
+      } catch {
+        // Previous avatar may already be gone
+      }
+    }
+
+    const publicId = `managing-your-files/avatars/${userId}`;
+    const result = await uploadToCloudinary({
+      buffer: file.buffer,
+      publicId,
+      mimeType: file.mimetype,
+    });
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { avatar: result.secureUrl },
     });
 
     return toSafeUserDto(updated);

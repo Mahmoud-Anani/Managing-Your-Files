@@ -158,10 +158,14 @@ function Sidebar({
       <div className="border-t border-border p-3">
         <div className={cn("flex flex-col", collapsed && "items-center")}>
           <span
-            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground"
+            className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-xs font-semibold text-primary-foreground"
             aria-hidden
           >
-            {getInitials(user?.name)}
+            {user?.avatar ? (
+              <img src={user.avatar} alt={user.name ?? ""} className="size-8 object-cover" />
+            ) : (
+              getInitials(user?.name)
+            )}
           </span>
           {!collapsed ? (
             <>
@@ -296,8 +300,12 @@ function MobileDrawer({
             </nav>
             <div className="border-t border-border p-4">
               <div className="flex items-center gap-3">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                  {getInitials(user?.name)}
+                <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                  {user?.avatar ? (
+                    <img src={user.avatar} alt={user.name ?? ""} className="size-9 object-cover" />
+                  ) : (
+                    getInitials(user?.name)
+                  )}
                 </span>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-foreground">

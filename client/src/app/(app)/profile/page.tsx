@@ -43,8 +43,12 @@ export default function ProfilePage() {
 
       <Card className="p-6">
         <div className="flex items-center gap-4">
-          <span className="flex size-16 shrink-0 items-center justify-center rounded-full bg-primary text-lg font-semibold text-primary-foreground">
-            {getInitials(user?.name)}
+          <span className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-lg font-semibold text-primary-foreground">
+            {user?.avatar ? (
+              <img src={user.avatar} alt={user.name ?? ""} className="size-16 object-cover" />
+            ) : (
+              getInitials(user?.name)
+            )}
           </span>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">

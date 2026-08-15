@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { getAuthUser } from '../../common/guards';
+import { ValidationError } from '../../common/errors';
 import { AuthService } from './auth.service';
 import type { AuditContext } from '../audit/audit.service';
 import type {
@@ -93,6 +94,21 @@ export class AuthController {
   ): Promise<void> {
     const user = getAuthUser(req);
     const result = await authService.updateProfile(user.id, req.body as UpdateProfileDto);
+    res.json(result);
+  }
+
+  async uploadAvatar(
+    req: Request,
+    res: Response,
+  ): Promise<void> {
+    const user = getAuthUser(req);
+    if (!req.file) {
+      throw new ValidationError('No file uploaded');
+    }
+    const result = await authService.uploadAvatar(user.id, {
+      buffer: req.file.buffer,
+      mimetype: req.file.mimetype,
+    });
     res.json(result);
   }
 

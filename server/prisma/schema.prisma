@@ -22,6 +22,7 @@ model User {
   name              String
   email             String             @unique
   password          String
+  avatar            String?
   role              Role               @default(USER)
   isVerified        Boolean            @default(false)
   createdAt         DateTime           @default(now())

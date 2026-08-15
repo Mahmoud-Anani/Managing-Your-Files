@@ -1,19 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { useAuth } from "@/contexts/auth-context";
-import { api, ApiError } from "@/lib/api";
+import { api, uploadApi, ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
-import { User, Lock, Trash2 } from "lucide-react";
+import { User, Lock, Trash2, Camera } from "lucide-react";
 
 type ProfileFormValues = { name: string };
 type PasswordFormValues = {
@@ -23,9 +23,20 @@ type PasswordFormValues = {
 };
 type DeleteFormValues = { password: string };
 
+function getInitials(name?: string): string {
+  if (!name) return "?";
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
 export default function SettingsPage() {
   const { t } = useTranslation();
   const { user, refreshUser, logout } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [profileSuccess, setProfileSuccess] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
@@ -34,6 +45,9 @@ export default function SettingsPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [avatarSuccess, setAvatarSuccess] = useState(false);
 
   const profileSchema = z.object({
     name: z
@@ -88,6 +102,34 @@ export default function SettingsPage() {
     resolver: zodResolver(deleteSchema),
     defaultValues: { password: "" },
   });
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setAvatarError(null);
+    setAvatarSuccess(false);
+    setAvatarLoading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("avatar", file);
+      await uploadApi.post("/auth/avatar", formData);
+      await refreshUser();
+      setAvatarSuccess(true);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setAvatarError(err.message);
+      } else {
+        setAvatarError(t("common.errorGeneric"));
+      }
+    } finally {
+      setAvatarLoading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
 
   const onSubmitProfile = async (values: ProfileFormValues) => {
     setProfileError(null);
@@ -153,6 +195,56 @@ export default function SettingsPage() {
           {t("settings.subtitle")}
         </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Camera className="size-5" />
+            {t("settings.avatarSection")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {avatarSuccess ? (
+            <Alert variant="success" className="mb-4">{t("settings.avatarUpdated")}</Alert>
+          ) : null}
+          {avatarError ? (
+            <Alert variant="error" className="mb-4">{avatarError}</Alert>
+          ) : null}
+          <div className="flex items-center gap-6">
+            <span className="flex size-20 shrink-0 items-center justify-center rounded-full bg-primary text-2xl font-semibold text-primary-foreground">
+              {user?.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="size-20 rounded-full object-cover"
+                />
+              ) : (
+                getInitials(user?.name)
+              )}
+            </span>
+            <div>
+              <Button
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                loading={avatarLoading}
+              >
+                <Camera className="size-4 me-1" />
+                {t("settings.uploadAvatar")}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
+              <p className="mt-2 text-xs text-muted-foreground">
+                {t("settings.avatarHint")}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
