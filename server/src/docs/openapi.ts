@@ -566,7 +566,7 @@ export const openapi = {
         tags: ['Files'],
         summary: 'Upload files',
         description:
-          `Uploads up to 10 files at once as \`multipart/form-data\` using the field name \`files\`.\n\nAllowed types: PNG, JPEG, GIF, WebP, BMP, PDF, TXT, Markdown, CSV, JSON, XML. Maximum file size is configurable via \`MAX_FILE_SIZE_MB\`. Text is extracted from PDF and plain-text files.`,
+          `Uploads up to 10 files at once as \`multipart/form-data\` using the field name \`files\`.\n\nAllowed types: PNG, JPEG, GIF, WebP, BMP, SVG, PDF, DOC, DOCX, ODT, RTF, XLS, XLSX, PPT, PPTX, TXT, Markdown, CSV, HTML, XML, JSON, YAML. Maximum file size is configurable via \`MAX_FILE_SIZE_MB\`. Text is extracted from PDF, DOCX and plain-text files.`,
         operationId: 'uploadFiles',
         security: bearer,
         requestBody: {

@@ -14,10 +14,7 @@ function auditContextFrom(req: Request): AuditContext {
   };
 }
 
-function contentDisposition(
-  filename: string,
-  inline: boolean,
-): string {
+function contentDisposition(filename: string, inline: boolean): string {
   const disposition = inline ? 'inline' : 'attachment';
   return `${disposition}; filename*=UTF-8''${encodeURIComponent(filename)}; filename="${filename.replace(/["\\]/g, '')}"`;
 }
@@ -33,13 +30,37 @@ async function streamCloudinary(
     ? await filesService.getForPreview(user, id, auditContextFrom(req))
     : await filesService.getForDownload(user, id, auditContextFrom(req));
 
-  const upstream = await fetch(file.url);
+  // Try to proxy the asset through the server with a short timeout. If the
+  // upstream fetch fails (network issues, timeouts, DNS), fall back to
+  // redirecting the client directly to the Cloudinary URL so they can still
+  // preview / download the file.
+  const controller = new AbortController();
+  const FETCH_TIMEOUT_MS = 10000; // 10s
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+  let upstream: Response | undefined;
+  try {
+    // Use the global fetch (undici) available in Node.
+    upstream = await fetch(file.url, { signal: controller.signal });
+  } catch (err) {
+    clearTimeout(timeout);
+    // Network error / timeout — fall back to redirect so the user still gets the file
+    res.setHeader('Cache-Control', 'private, no-store');
+    return res.redirect(file.url);
+  }
+  clearTimeout(timeout);
+
   if (!upstream.ok || !upstream.body) {
-    throw new NotFoundError('File unavailable');
+    // Upstream returned an error — redirect as a graceful fallback.
+    res.setHeader('Cache-Control', 'private, no-store');
+    return res.redirect(file.url);
   }
 
   res.setHeader('Content-Type', file.mimeType);
-  res.setHeader('Content-Disposition', contentDisposition(file.originalName, inline));
+  res.setHeader(
+    'Content-Disposition',
+    contentDisposition(file.originalName, inline),
+  );
   res.setHeader('Cache-Control', 'private, no-store');
   res.status(200);
 
@@ -70,7 +91,11 @@ export class FilesController {
     if (!files || files.length === 0) {
       throw new ValidationError('At least one file is required');
     }
-    const result = await filesService.upload(user, files, auditContextFrom(req));
+    const result = await filesService.upload(
+      user,
+      files,
+      auditContextFrom(req),
+    );
     res.status(201).json(result);
   }
 
@@ -162,7 +187,11 @@ export class FilesController {
     if (!id) {
       throw new ValidationError('File id is required');
     }
-    const result = await filesService.adminDelete(actor, id, auditContextFrom(req));
+    const result = await filesService.adminDelete(
+      actor,
+      id,
+      auditContextFrom(req),
+    );
     res.json(result);
   }
 
@@ -172,7 +201,11 @@ export class FilesController {
     if (!id) {
       throw new ValidationError('File id is required');
     }
-    const result = await filesService.adminRestore(actor, id, auditContextFrom(req));
+    const result = await filesService.adminRestore(
+      actor,
+      id,
+      auditContextFrom(req),
+    );
     res.json(result);
   }
 
@@ -182,7 +215,11 @@ export class FilesController {
     if (!id) {
       throw new ValidationError('File id is required');
     }
-    const result = await filesService.adminPurge(actor, id, auditContextFrom(req));
+    const result = await filesService.adminPurge(
+      actor,
+      id,
+      auditContextFrom(req),
+    );
     res.json(result);
   }
 }

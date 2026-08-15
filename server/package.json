@@ -29,6 +29,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "jsonwebtoken": "^9.0.2",
+    "mammoth": "^1.8.0",
     "multer": "^2.0.1",
     "nodemailer": "^6.9.15",
     "pdf-parse": "^1.1.1",

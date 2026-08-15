@@ -53,7 +53,7 @@ export function Footer() {
             </p>
             <div className="mt-5 flex items-center gap-2">
               <SocialLink
-                href="https://github.com"
+                href="https://github.com/Mahmoud-Anani/Managing-Your-Files"
                 ariaLabel={t("footer.github")}
               >
                 <GithubIcon />
@@ -62,7 +62,7 @@ export function Footer() {
                 <XIcon />
               </SocialLink>
               <SocialLink
-                href="https://linkedin.com"
+                href="https://www.linkedin.com/in/mahmoud-anani"
                 ariaLabel={t("footer.linkedin")}
               >
                 <LinkedinIcon />
@@ -90,9 +90,7 @@ export function Footer() {
           ))}
         </div>
         <div className="flex flex-col items-center justify-between gap-2 border-t border-border py-6 text-xs text-muted-foreground sm:flex-row">
-          <p>
-            {t("footer.copyright", { year })}
-          </p>
+          <p>{t("footer.copyright", { year })}</p>
           <p>{t("footer.madeWith")}</p>
         </div>
       </Container>
@@ -142,12 +140,7 @@ function GithubIcon() {
 
 function XIcon() {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className="size-4"
-      aria-hidden
-    >
+    <svg viewBox="0 0 24 24" fill="currentColor" className="size-4" aria-hidden>
       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
     </svg>
   );

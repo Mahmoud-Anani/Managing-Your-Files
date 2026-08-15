@@ -40,14 +40,68 @@ import { useToast } from "@/components/ui/toast";
 
 const PAGE_SIZE = 10;
 
-const ACCEPTED_IMAGE_TYPES = [
-  "image/jpeg",
+const ACCEPTED_FILE_TYPES = [
+  // Images
   "image/png",
-  "image/webp",
+  "image/jpeg",
   "image/gif",
+  "image/webp",
+  "image/bmp",
+  "image/svg+xml",
+  // Documents
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.oasis.opendocument.text",
+  "application/rtf",
+  // Spreadsheets
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  // Presentations
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  // Text & data
+  "text/plain",
+  "text/markdown",
+  "text/csv",
+  "text/html",
+  "text/xml",
+  "text/yaml",
+  "application/json",
+  "application/xml",
+  "application/x-yaml",
 ];
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const ACCEPTED_EXTENSIONS = new Set([
+  "png",
+  "jpg",
+  "jpeg",
+  "gif",
+  "webp",
+  "bmp",
+  "svg",
+  "pdf",
+  "doc",
+  "docx",
+  "odt",
+  "rtf",
+  "xls",
+  "xlsx",
+  "ppt",
+  "pptx",
+  "txt",
+  "md",
+  "markdown",
+  "csv",
+  "html",
+  "htm",
+  "xml",
+  "json",
+  "yaml",
+  "yml",
+]);
+
+const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
 
 export default function FilesPage() {
   const { toast } = useToast();
@@ -101,7 +155,12 @@ export default function FilesPage() {
 
       // Validate files before sending them
       for (const file of files) {
-        if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+        const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+
+        if (
+          !ACCEPTED_FILE_TYPES.includes(file.type) &&
+          !ACCEPTED_EXTENSIONS.has(extension)
+        ) {
           throw new Error(t("files.unsupportedType", { name: file.name }));
         }
 
@@ -507,7 +566,7 @@ function UploadCard({
           <input
             type="file"
             multiple
-            accept="image/jpeg,image/png,image/webp,image/gif"
+            accept={ACCEPTED_FILE_TYPES.join(",")}
             disabled={uploading}
             className="hidden"
             onChange={(event) => {

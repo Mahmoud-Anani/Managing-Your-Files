@@ -13,15 +13,12 @@ export interface CloudinaryUploadResult {
   secureUrl: string;
 }
 
-export function cloudinaryPublicId(extension: string): string {
-  return `managing-your-files/${randomUUID()}${extension}`;
+export function cloudinaryPublicId(): string {
+  return `managing-your-files/${randomUUID()}`;
 }
 
 export function cloudinaryResourceType(mimeType: string): 'image' | 'raw' {
-  if (mimeType.startsWith('image/') || mimeType === 'application/pdf') {
-    return 'image';
-  }
-  return 'raw';
+  return mimeType.startsWith('image/') ? 'image' : 'raw';
 }
 
 export async function uploadToCloudinary(input: {
@@ -51,6 +48,11 @@ export async function uploadToCloudinary(input: {
   });
 }
 
-export async function deleteFromCloudinary(publicId: string): Promise<void> {
-  await cloudinary.v2.uploader.destroy(publicId);
+export async function deleteFromCloudinary(
+  publicId: string,
+  resourceType: 'image' | 'raw',
+): Promise<void> {
+  await cloudinary.v2.uploader.destroy(publicId, {
+    resource_type: resourceType,
+  });
 }

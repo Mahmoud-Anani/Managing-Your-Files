@@ -8,18 +8,35 @@ export const MAX_FILES_PER_UPLOAD = 10;
 export const MAX_EXTRACTED_TEXT_LENGTH = 100_000;
 
 export const ALLOWED_MIME_TYPES: ReadonlySet<string> = new Set([
+  // Images
   'image/png',
   'image/jpeg',
   'image/gif',
   'image/webp',
   'image/bmp',
+  'image/svg+xml',
+  // Documents
   'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.oasis.opendocument.text',
+  'application/rtf',
+  // Spreadsheets
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  // Presentations
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  // Text & data
   'text/plain',
   'text/markdown',
   'text/csv',
-  'application/json',
+  'text/html',
   'text/xml',
+  'text/yaml',
+  'application/json',
   'application/xml',
+  'application/x-yaml',
 ]);
 
 const storage = multer.memoryStorage();

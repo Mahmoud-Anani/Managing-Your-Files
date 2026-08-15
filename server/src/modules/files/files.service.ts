@@ -4,6 +4,7 @@ import { ForbiddenError, NotFoundError } from '../../common/errors';
 import { paginate, type PaginatedResult } from '../../common/pagination';
 import {
   cloudinaryPublicId,
+  cloudinaryResourceType,
   deleteFromCloudinary,
   uploadToCloudinary,
 } from '../../common/cloudinary';
@@ -35,9 +36,15 @@ function fileOrderBy(
   return { createdAt: sortOrder };
 }
 
-async function removeStoredFile(publicId: string): Promise<void> {
+async function removeStoredFile(
+  storedName: string,
+  mimeType: string,
+): Promise<void> {
   try {
-    await deleteFromCloudinary(publicId);
+    await deleteFromCloudinary(
+      storedName,
+      cloudinaryResourceType(mimeType),
+    );
   } catch {
     // The Cloudinary asset may already be missing; the database record is
     // the source of truth for the delete operation.
@@ -73,7 +80,7 @@ export class FilesService {
           extension,
         });
 
-        const publicId = cloudinaryPublicId(extension ? `.${extension}` : '');
+        const publicId = cloudinaryPublicId();
         const uploaded = await uploadToCloudinary({
           buffer: file.buffer,
           publicId,
@@ -280,7 +287,7 @@ export class FilesService {
       throw new NotFoundError('File not found');
     }
 
-    await removeStoredFile(file.storedName);
+    await removeStoredFile(file.storedName, file.mimeType);
     await prisma.file.delete({ where: { id: fileId } });
 
     await auditService.log({
@@ -414,7 +421,7 @@ export class FilesService {
       throw new NotFoundError('File not found');
     }
 
-    await removeStoredFile(file.storedName);
+    await removeStoredFile(file.storedName, file.mimeType);
     await prisma.file.delete({ where: { id: fileId } });
 
     await auditService.log({
