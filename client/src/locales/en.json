@@ -390,7 +390,7 @@
     "uploadSuccess": "Files uploaded successfully.",
     "uploadFailed": "Upload failed.",
     "searchPlaceholder": "Search by file name…",
-    "typePlaceholder": "Type (e.g. pdf)",
+    "typePlaceholder": "All types",
     "loadError": "Could not load files.",
     "noFilesFound": "No files found",
     "adjustFilters": "Try adjusting your search or filters.",

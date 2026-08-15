@@ -92,12 +92,12 @@ export default function ProfilePage() {
           label={t("admin.status")}
           value={user?.isVerified ? t("admin.verified") : t("admin.unverified")}
         />
-        <DetailRow
+        {/* <DetailRow
           icon={<BadgeCheck className="size-4" />}
           label={t("auth.resetPasswordTitle")}
           value={t("auth.resetPassword")}
           link={"/forgot-password"}
-        />
+        /> */}
       </Card>
 
       <p className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -126,7 +126,7 @@ function DetailRow({
       </span>
       <span className="text-sm text-muted-foreground">{label}</span>
       <span className="ms-auto truncate text-sm font-medium text-foreground">
-        {!link && value }
+        {!link && value}
         {link && (
           <Link href={link as LinkProps["href"]} className="ms-2 text-primary">
             {value}

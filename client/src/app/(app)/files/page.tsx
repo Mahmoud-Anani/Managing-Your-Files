@@ -345,15 +345,21 @@ export default function FilesPage() {
               />
             </div>
 
-            <Input
+            <select
               value={type}
               onChange={(event) => {
-                setType(event.target.value.trim());
+                setType(event.target.value);
                 setPage(1);
               }}
-              placeholder={t("files.typePlaceholder")}
-              className="sm:w-36"
-            />
+              className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-36"
+            >
+              <option value="">{t("files.typePlaceholder")}</option>
+              {Array.from(ACCEPTED_EXTENSIONS).sort().map((ext) => (
+                <option key={ext} value={ext}>
+                  .{ext}
+                </option>
+              ))}
+            </select>
 
             <Button variant="outline" onClick={applySearch}>
               {t("common.search")}
