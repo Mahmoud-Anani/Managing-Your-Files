@@ -20,6 +20,9 @@
       "prisma:deploy": "prisma migrate deploy",
       "seed": "ts-node prisma/seed.ts"
     },
+    "engines": {
+      "node": ">=20.0.0"
+    },
     "prisma": {
       "seed": "ts-node prisma/seed.ts"
     },
