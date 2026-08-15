@@ -181,7 +181,7 @@ export class FilesService {
 
   async getById(user: User, fileId: string): Promise<FileDetailDto> {
     const file = await findFile(fileId, false);
-    this.assertCanAccess(file, user.id, user.role);
+    await this.assertCanAccess(file, user.id, user.role);
     return toFileDetailDto(file);
   }
 
@@ -191,7 +191,7 @@ export class FilesService {
     ctx?: AuditContext,
   ): Promise<File> {
     const file = await findFile(fileId, false);
-    this.assertCanAccess(file, user.id, user.role);
+    await this.assertCanAccess(file, user.id, user.role);
 
     await auditService.log({
       userId: user.id,
@@ -211,7 +211,7 @@ export class FilesService {
     ctx?: AuditContext,
   ): Promise<File> {
     const file = await findFile(fileId, false);
-    this.assertCanAccess(file, user.id, user.role);
+    await this.assertCanAccess(file, user.id, user.role);
 
     await auditService.log({
       userId: user.id,
@@ -231,7 +231,7 @@ export class FilesService {
     ctx?: AuditContext,
   ): Promise<{ message: string }> {
     const file = await findFile(fileId, false);
-    this.assertCanAccess(file, user.id, user.role);
+    await this.assertCanAccess(file, user.id, user.role);
 
     await prisma.file.update({
       where: { id: fileId },
@@ -256,7 +256,7 @@ export class FilesService {
     ctx?: AuditContext,
   ): Promise<SafeFileDto> {
     const file = await findFile(fileId, true);
-    this.assertCanAccess(file, user.id, user.role);
+    await this.assertCanAccess(file, user.id, user.role);
     if (!file.deletedAt) {
       throw new NotFoundError('File not found');
     }
@@ -284,7 +284,7 @@ export class FilesService {
     ctx?: AuditContext,
   ): Promise<{ message: string }> {
     const file = await findFile(fileId, true);
-    this.assertCanAccess(file, user.id, user.role);
+    await this.assertCanAccess(file, user.id, user.role);
     if (!file.deletedAt) {
       throw new NotFoundError('File not found');
     }
@@ -438,8 +438,14 @@ export class FilesService {
     return { message: 'File permanently deleted' };
   }
 
-  private assertCanAccess(file: File, userId: string, role: Role): void {
-    if (file.userId !== userId && role !== 'ADMIN') {
+  private async assertCanAccess(file: File, userId: string, role: Role): Promise<void> {
+    if (file.userId === userId || role === 'ADMIN') {
+      return;
+    }
+    const share = await prisma.fileShare.findUnique({
+      where: { fileId_sharedWithId: { fileId: file.id, sharedWithId: userId } },
+    });
+    if (!share) {
       throw new ForbiddenError('You do not have access to this file');
     }
   }
