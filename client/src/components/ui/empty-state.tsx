@@ -1,4 +1,7 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export interface EmptyStateProps {
@@ -17,7 +20,10 @@ export function EmptyState({
   className,
 }: EmptyStateProps) {
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, scale: 0.97, y: 8 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
       className={cn(
         "flex flex-col items-center justify-center gap-2 rounded-md border border-dashed border-border py-14 text-center",
         className,
@@ -33,6 +39,6 @@ export function EmptyState({
         <p className="max-w-sm text-sm text-muted-foreground">{description}</p>
       ) : null}
       {action ? <div className="mt-3">{action}</div> : null}
-    </div>
+    </motion.div>
   );
 }

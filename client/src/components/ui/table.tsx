@@ -1,4 +1,7 @@
+"use client";
+
 import type { HTMLAttributes, TdHTMLAttributes, ThHTMLAttributes } from "react";
+import { motion, type HTMLMotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export function Table({ className, ...props }: HTMLAttributes<HTMLTableElement>) {
@@ -28,9 +31,12 @@ export function TableBody({
   return <tbody className={cn("divide-y divide-border", className)} {...props} />;
 }
 
-export function TableRow({ className, ...props }: HTMLAttributes<HTMLTableRowElement>) {
+export function TableRow({ className, ...props }: HTMLMotionProps<"tr">) {
   return (
-    <tr
+    <motion.tr
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
       className={cn("transition-colors hover:bg-muted/40", className)}
       {...props}
     />

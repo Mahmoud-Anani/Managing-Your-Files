@@ -8,10 +8,7 @@ const P1001_BASE_DELAY_MS = 500; // Start with 500ms, exponential backoff
 
 function createPrismaClient(): PrismaClient {
   const client = new PrismaClient({
-    log:
-      process.env.NODE_ENV === 'development'
-        ? ['error', 'warn']
-        : ['error'],
+    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
   });
 
   /**

@@ -1,9 +1,14 @@
+"use client";
+
 import type { HTMLAttributes } from "react";
+import { motion, type HTMLMotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+export function Card({ className, ...props }: HTMLMotionProps<"div">) {
   return (
-    <div
+    <motion.div
+      whileHover={{ y: -2 }}
+      transition={{ type: "spring", damping: 22, stiffness: 300 }}
       className={cn(
         "rounded-lg border border-border bg-card text-card-foreground shadow-sm",
         className,

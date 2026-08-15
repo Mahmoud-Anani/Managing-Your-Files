@@ -51,6 +51,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
   const { user, isAdmin } = useAuth();
   const { collapsed, toggle } = useSidebarCollapsed();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const pathname = usePathname();
 
   const navItems: NavItem[] = [
     { href: "/dashboard", label: t("nav.overview"), icon: LayoutDashboard },
@@ -94,7 +95,15 @@ function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           <PreferencesControls />
         </header>
-        <main className="flex-1 p-4 md:p-8">{children}</main>
+        <motion.main
+          key={pathname}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+          className="flex-1 p-4 md:p-8"
+        >
+          {children}
+        </motion.main>
       </div>
       <MobileDrawer
         open={drawerOpen}

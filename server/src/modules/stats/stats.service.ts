@@ -17,11 +17,17 @@ export interface DailyStat {
   count: number;
 }
 
+export interface DailyStorageStat {
+  date: string;
+  bytes: number;
+}
+
 export interface UserStats {
   totalFiles: number;
   totalStorageBytes: number;
   typeBreakdown: TypeStat[];
   dailyUploads: DailyStat[];
+  dailyStorageBytes: DailyStorageStat[];
 }
 
 export interface AdminStats {
@@ -43,16 +49,22 @@ interface DailyUploadsRow {
   count: number;
 }
 
+interface DailyStorageRow {
+  day: Date;
+  bytes: number;
+}
+
 export class StatsService {
   async userStats(user: User, days: number): Promise<UserStats> {
     const where: Prisma.FileWhereInput = { userId: user.id, deletedAt: null };
 
-    const [totalFiles, storageAggregate, typeBreakdown, dailyUploads] =
+    const [totalFiles, storageAggregate, typeBreakdown, dailyUploads, dailyStorageBytes] =
       await Promise.all([
         prisma.file.count({ where }),
         prisma.file.aggregate({ where, _sum: { size: true } }),
         this.typeBreakdown(where),
         this.dailyUploads(user.id, days),
+        this.dailyStorageBytes(user.id, days),
       ]);
 
     return {
@@ -60,6 +72,7 @@ export class StatsService {
       totalStorageBytes: storageAggregate._sum.size ?? 0,
       typeBreakdown,
       dailyUploads,
+      dailyStorageBytes,
     };
   }
 
@@ -139,6 +152,39 @@ export class StatsService {
       date.setDate(date.getDate() - offset);
       const key = date.toISOString().slice(0, 10);
       result.push({ date: key, count: countsByDay.get(key) ?? 0 });
+    }
+    return result;
+  }
+
+  private async dailyStorageBytes(
+    userId: string,
+    days: number,
+  ): Promise<DailyStorageStat[]> {
+    const rows = await prisma.$queryRaw<DailyStorageRow[]>(
+      Prisma.sql`
+        SELECT date_trunc('day', "createdAt")::date AS day, SUM("size")::bigint AS bytes
+        FROM "files"
+        WHERE "userId" = ${userId}
+          AND "deletedAt" IS NULL
+          AND "createdAt" >= now() - make_interval(days => ${days}::int)
+        GROUP BY day
+        ORDER BY day ASC
+      `,
+    );
+
+    const bytesByDay = new Map<string, number>();
+    for (const row of rows) {
+      bytesByDay.set(row.day.toISOString().slice(0, 10), Number(row.bytes));
+    }
+
+    const result: DailyStorageStat[] = [];
+    let runningTotal = 0;
+    for (let offset = days - 1; offset >= 0; offset--) {
+      const date = new Date();
+      date.setDate(date.getDate() - offset);
+      const key = date.toISOString().slice(0, 10);
+      runningTotal += bytesByDay.get(key) ?? 0;
+      result.push({ date: key, bytes: runningTotal });
     }
     return result;
   }

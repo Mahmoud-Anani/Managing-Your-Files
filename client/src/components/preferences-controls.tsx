@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useTheme } from "@teispace/next-themes";
 import { useTranslation } from "react-i18next";
+import { AnimatePresence, motion } from "framer-motion";
 import { Check, Globe, Monitor, Moon, Sun } from "lucide-react";
 import { useI18n } from "@/contexts/i18n-provider";
 import { localeNames, locales } from "@/lib/i18n";
@@ -146,11 +147,19 @@ function Menu({
       >
         {trigger}
       </button>
-      {open ? (
-        <div className="absolute inset-e-0 top-full z-50 mt-1 w-40 rounded-md border border-border bg-card p-1 shadow-lg">
-          {children}
-        </div>
-      ) : null}
+      <AnimatePresence>
+        {open ? (
+          <motion.div
+            initial={{ opacity: 0, y: 6, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 6, scale: 0.97 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="absolute inset-e-0 top-full z-50 mt-1 w-40 rounded-md border border-border bg-card p-1 shadow-lg"
+          >
+            {children}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }

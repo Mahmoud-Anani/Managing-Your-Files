@@ -365,7 +365,9 @@
     "noUploadsYet": "No uploads yet.",
     "uploadFirstFile": "Upload your first file",
     "dailyUploads": "Daily uploads",
-    "dailyUploadsDescription": "Files uploaded over the last {{days}} days."
+    "dailyUploadsDescription": "Files uploaded over the last {{days}} days.",
+    "storageGrowth": "Storage growth",
+    "storageGrowthDescription": "Cumulative storage used over the last {{days}} days."
   },
   "storage": {
     "title": "Storage",

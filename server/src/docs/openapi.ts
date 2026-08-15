@@ -282,9 +282,23 @@ export const openapi = {
           count: { type: 'integer', example: 3 },
         },
       },
+      DailyStorageStat: {
+        type: 'object',
+        required: ['date', 'bytes'],
+        properties: {
+          date: { type: 'string', format: 'date', example: '2026-08-14' },
+          bytes: { type: 'integer', format: 'int64', example: 10485760 },
+        },
+      },
       UserStats: {
         type: 'object',
-        required: ['totalFiles', 'totalStorageBytes', 'typeBreakdown', 'dailyUploads'],
+        required: [
+          'totalFiles',
+          'totalStorageBytes',
+          'typeBreakdown',
+          'dailyUploads',
+          'dailyStorageBytes',
+        ],
         properties: {
           totalFiles: { type: 'integer', example: 21 },
           totalStorageBytes: { type: 'integer', format: 'int64', example: 52428800 },
@@ -297,6 +311,11 @@ export const openapi = {
             type: 'array',
             description: 'Uploads per day for the requested window; missing days are zero-filled.',
             items: { $ref: '#/components/schemas/DailyStat' },
+          },
+          dailyStorageBytes: {
+            type: 'array',
+            description: 'Cumulative storage bytes per day for the requested window.',
+            items: { $ref: '#/components/schemas/DailyStorageStat' },
           },
         },
       },

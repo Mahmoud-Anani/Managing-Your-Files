@@ -1,9 +1,11 @@
-import type { HTMLAttributes } from "react";
+"use client";
+
+import { motion, type HTMLMotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 type BadgeVariant = "default" | "secondary" | "success" | "destructive" | "outline";
 
-export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
+export interface BadgeProps extends HTMLMotionProps<"span"> {
   variant?: BadgeVariant;
 }
 
@@ -21,7 +23,10 @@ export function Badge({
   ...props
 }: BadgeProps) {
   return (
-    <span
+    <motion.span
+      initial={{ opacity: 0, scale: 0.85 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
       className={cn(
         "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
         variantClasses[variant],

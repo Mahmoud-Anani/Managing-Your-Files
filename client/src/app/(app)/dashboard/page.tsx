@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -45,6 +47,15 @@ export default function OverviewPage() {
       (data?.dailyUploads ?? []).map((entry) => ({
         date: formatDate(entry.date),
         uploads: entry.count,
+      })),
+    [data],
+  );
+
+  const storageChartData = useMemo(
+    () =>
+      (data?.dailyStorageBytes ?? []).map((entry) => ({
+        date: formatDate(entry.date),
+        bytes: entry.bytes,
       })),
     [data],
   );
@@ -155,6 +166,59 @@ export default function OverviewPage() {
                 </div>
               ))}
             </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("dashboard.storageGrowth")}</CardTitle>
+          <CardDescription>
+            {t("dashboard.storageGrowthDescription", { days })}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <Skeleton className="h-56 w-full" />
+          ) : (
+            <ResponsiveContainer width="100%" height={224}>
+              <AreaChart data={storageChartData}>
+                <defs>
+                  <linearGradient id="storageFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
+                  tickLine={false}
+                  width={56}
+                  tickFormatter={(value: number) => formatBytes(value)}
+                />
+                <Tooltip
+                  formatter={(value) => formatBytes(Number(value))}
+                  contentStyle={{
+                    background: "var(--card)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 8,
+                    fontSize: 12,
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="bytes"
+                  stroke="var(--primary)"
+                  strokeWidth={2}
+                  fill="url(#storageFill)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           )}
         </CardContent>
       </Card>

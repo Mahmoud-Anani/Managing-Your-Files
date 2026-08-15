@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
+import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +33,8 @@ function pageRange(current: number, total: number): Array<number | "..."> {
   return range;
 }
 
+const tapTransition = { duration: 0.12, ease: "easeOut" as const };
+
 export function Pagination({
   page,
   totalPages,
@@ -55,41 +58,47 @@ export function Pagination({
         {t("common.showingPage", { page, totalPages, total })}
       </p>
       <nav aria-label={t("common.pagination")} className="flex items-center gap-1.5">
-        <button
+        <motion.button
           type="button"
           disabled={page <= 1}
           onClick={() => onPageChange(page - 1)}
+          whileTap={{ scale: 0.94 }}
+          transition={tapTransition}
           className={cn(base, idle)}
           aria-label={t("common.previousPage")}
         >
           <ChevronLeft className="size-4" />
-        </button>
+        </motion.button>
         {pageRange(page, totalPages).map((item, index) =>
           item === "..." ? (
             <span key={`ellipsis-${index}`} className="px-1 text-muted-foreground">
               …
             </span>
           ) : (
-            <button
+            <motion.button
               key={item}
               type="button"
               onClick={() => onPageChange(item)}
+              whileTap={{ scale: 0.94 }}
+              transition={tapTransition}
               aria-current={item === page ? "page" : undefined}
               className={cn(base, item === page ? active : idle)}
             >
               {item}
-            </button>
+            </motion.button>
           ),
         )}
-        <button
+        <motion.button
           type="button"
           disabled={page >= totalPages}
           onClick={() => onPageChange(page + 1)}
+          whileTap={{ scale: 0.94 }}
+          transition={tapTransition}
           className={cn(base, idle)}
           aria-label={t("common.nextPage")}
         >
           <ChevronRight className="size-4" />
-        </button>
+        </motion.button>
       </nav>
     </div>
   );

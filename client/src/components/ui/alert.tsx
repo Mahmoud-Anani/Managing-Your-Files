@@ -1,4 +1,7 @@
+"use client";
+
 import { AlertCircle, CheckCircle2, Info, TriangleAlert } from "lucide-react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 type AlertVariant = "error" | "success" | "info" | "warning";
@@ -44,8 +47,11 @@ export function Alert({
 }: AlertProps) {
   const { icon: Icon, className: alertClass, iconClass } = config[variant];
   return (
-    <div
+    <motion.div
       role="alert"
+      initial={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
       className={cn(
         "flex items-start gap-3 rounded-md border p-3 text-sm",
         alertClass,
@@ -57,6 +63,6 @@ export function Alert({
         {title ? <p className="font-medium">{title}</p> : null}
         {children ? <div className="mt-0.5 opacity-90">{children}</div> : null}
       </div>
-    </div>
+    </motion.div>
   );
 }

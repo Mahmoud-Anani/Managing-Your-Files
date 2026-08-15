@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/toast";
+import { Reveal } from "@/components/motion/reveal";
 
 interface ContactFormValues {
   name: string;
@@ -47,11 +48,12 @@ export function ContactForm() {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      noValidate
-      className="space-y-5 rounded-2xl border border-border bg-card p-6 sm:p-8"
-    >
+    <Reveal>
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        noValidate
+        className="space-y-5 rounded-2xl border border-border bg-card p-6 sm:p-8"
+      >
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="contact-name">{t("contact.name")}</Label>
@@ -98,6 +100,7 @@ export function ContactForm() {
       <Button type="submit" loading={isSubmitting} className="w-full sm:w-auto">
         {t("contact.submit")}
       </Button>
-    </form>
+      </form>
+    </Reveal>
   );
 }

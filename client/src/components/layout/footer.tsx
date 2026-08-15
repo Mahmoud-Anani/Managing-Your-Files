@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { Logo } from "@/components/layout/logo";
 import { Container } from "@/components/layout/container";
+import { Reveal, RevealGroup, RevealItem } from "@/components/motion/reveal";
 
 interface FooterLink {
   href: string;
@@ -45,8 +46,11 @@ export function Footer() {
   return (
     <footer className="border-t border-border bg-card">
       <Container>
-        <div className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-6">
-          <div className="lg:col-span-2">
+        <RevealGroup
+          className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-6"
+          stagger={0.06}
+        >
+          <RevealItem className="lg:col-span-2">
             <Logo />
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
               {t("footer.tagline")}
@@ -68,31 +72,33 @@ export function Footer() {
                 <LinkedinIcon />
               </SocialLink>
             </div>
-          </div>
+          </RevealItem>
           {columns.map((column) => (
-            <nav key={column.title} aria-label={column.title}>
-              <h3 className="mb-3 text-sm font-semibold tracking-tight">
-                {column.title}
-              </h3>
-              <ul className="space-y-2">
-                {column.links.map((link) => (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className="text-sm text-muted-foreground transition-colors hover:text-accent-foreground"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
+            <RevealItem key={column.title}>
+              <nav aria-label={column.title}>
+                <h3 className="mb-3 text-sm font-semibold tracking-tight">
+                  {column.title}
+                </h3>
+                <ul className="space-y-2">
+                  {column.links.map((link) => (
+                    <li key={link.href}>
+                      <Link
+                        href={link.href}
+                        className="text-sm text-muted-foreground transition-colors hover:text-accent-foreground"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            </RevealItem>
           ))}
-        </div>
-        <div className="flex flex-col items-center justify-between gap-2 border-t border-border py-6 text-xs text-muted-foreground sm:flex-row">
+        </RevealGroup>
+        <Reveal className="flex flex-col items-center justify-between gap-2 border-t border-border py-6 text-xs text-muted-foreground sm:flex-row">
           <p>{t("footer.copyright", { year })}</p>
           <p>{t("footer.madeWith")}</p>
-        </div>
+        </Reveal>
       </Container>
     </footer>
   );

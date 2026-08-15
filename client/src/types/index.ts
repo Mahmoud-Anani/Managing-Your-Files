@@ -88,11 +88,17 @@ export interface DailyStat {
   count: number;
 }
 
+export interface DailyStorageStat {
+  date: string;
+  bytes: number;
+}
+
 export interface UserStats {
   totalFiles: number;
   totalStorageBytes: number;
   typeBreakdown: TypeStat[];
   dailyUploads: DailyStat[];
+  dailyStorageBytes: DailyStorageStat[];
 }
 
 export interface AdminStats {

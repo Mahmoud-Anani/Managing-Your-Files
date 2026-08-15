@@ -358,7 +358,9 @@
     "noUploadsYet": "لا توجد رفعات بعد.",
     "uploadFirstFile": "ارفع أول ملف لك",
     "dailyUploads": "الرفع اليومي",
-    "dailyUploadsDescription": "الملفات المرفوعة خلال آخر {{days}} أيام."
+    "dailyUploadsDescription": "الملفات المرفوعة خلال آخر {{days}} أيام.",
+    "storageGrowth": "نمو التخزين",
+    "storageGrowthDescription": "مساحة التخزين المستخدمة بشكل تراكمي خلال آخر {{days}} أيام."
   },
   "storage": {
     "title": "التخزين",
