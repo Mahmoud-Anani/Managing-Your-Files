@@ -3,7 +3,7 @@ import cors from 'cors';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import { env } from './config/env';
-import { prisma } from './config/prisma';
+import { prisma, connectWithRetry } from './config/prisma';
 import { errorHandler } from './common/error-handler';
 import { notFoundHandler } from './common/not-found-handler';
 import { requestLogger } from './common/request-logger';
@@ -47,10 +47,12 @@ app.use('/api/v1', apiRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
+let server: ReturnType<typeof app.listen> | undefined;
+
 async function start(): Promise<void> {
   try {
-    await prisma.$connect();
-    app.listen(env.PORT, () => {
+    await connectWithRetry();
+    server = app.listen(env.PORT, () => {
       console.warn(`Server running on http://localhost:${env.PORT}`);
       console.warn(
         `Docs Swagger Server running on http://localhost:${env.PORT}/api/v1/docs`,
@@ -61,5 +63,24 @@ async function start(): Promise<void> {
     process.exit(1);
   }
 }
+
+async function shutdown(signal: string): Promise<void> {
+  console.warn(`\n[Server] ${signal} received — shutting down…`);
+  if (server) {
+    server.close(() => {
+      console.warn('[Server] HTTP server closed');
+    });
+  }
+  try {
+    await prisma.$disconnect();
+    console.warn('[Server] Prisma disconnected');
+  } catch {
+    // ignore disconnect errors during shutdown
+  }
+  process.exit(0);
+}
+
+process.on('SIGTERM', () => void shutdown('SIGTERM'));
+process.on('SIGINT', () => void shutdown('SIGINT'));
 
 void start();
