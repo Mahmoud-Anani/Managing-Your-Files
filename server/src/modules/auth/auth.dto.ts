@@ -35,3 +35,27 @@ export const loginSchema = z.object({
 });
 
 export type LoginDto = z.infer<typeof loginSchema>;
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Invalid email address'),
+});
+
+export type ForgotPasswordDto = z.infer<typeof forgotPasswordSchema>;
+
+export const resetPasswordSchema = z
+  .object({
+    email: z.string().trim().toLowerCase().email('Invalid email address'),
+    code: z.string().regex(/^\d{6}$/, 'Code must be exactly 6 digits'),
+    password: z
+      .string()
+      .min(8, 'Password must be at least 8 characters')
+      .max(72, 'Password must be at most 72 characters')
+      .regex(/\d/, 'Password must contain at least one number'),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
+
+export type ResetPasswordDto = z.infer<typeof resetPasswordSchema>;

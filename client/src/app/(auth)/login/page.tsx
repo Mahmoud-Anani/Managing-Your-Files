@@ -19,6 +19,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { EyeIcon, EyeOff } from "lucide-react";
+import i18n from "@/lib/i18n";
+import i18next from "i18next";
 
 type LoginFormValues = {
   email: string;
@@ -28,9 +31,14 @@ type LoginFormValues = {
 export default function LoginPage() {
   const { login } = useAuth();
   const { t } = useTranslation();
+  // get the courent lang
+  const currentLang = i18next.language || i18n.language;
   const [error, setError] = useState<string | null>(null);
+  const [toggleShowPassword, setToggleShowPassword] = useState(false);
   const [verified] = useState(
-    () => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("verified") === "1",
+    () =>
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("verified") === "1",
   );
 
   const loginSchema = useMemo(
@@ -92,14 +100,22 @@ export default function LoginPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">{t("common.password")}</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder={t("common.passwordPlaceholder")}
-              autoComplete="current-password"
-              invalid={Boolean(errors.password)}
-              {...register("password")}
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={toggleShowPassword ? "text" : "password"}
+                placeholder={t("common.passwordPlaceholder")}
+                autoComplete="current-password"
+                invalid={Boolean(errors.password)}
+                {...register("password")}
+              />
+              <span
+                className={`cursor-pointer absolute ${currentLang==="en"?"right-3":"left-3"} top-1/2 -translate-y-1/2 text-muted-foreground`}
+                onClick={() => setToggleShowPassword(!toggleShowPassword)}
+              >
+                {toggleShowPassword ? <EyeIcon /> : <EyeOff />}
+              </span>
+            </div>
             {errors.password ? (
               <p className="text-sm text-destructive">
                 {errors.password.message}
@@ -111,8 +127,19 @@ export default function LoginPage() {
           </Button>
         </form>
         <p className="mt-4 text-center text-sm text-muted-foreground">
+          <Link
+            href="/forgot-password"
+            className="font-medium text-primary hover:underline"
+          >
+            {t("auth.forgotPassword")}
+          </Link>
+        </p>
+        <p className="mt-2 text-center text-sm text-muted-foreground">
           {t("auth.noAccount")}{" "}
-          <Link href="/register" className="font-medium text-primary hover:underline">
+          <Link
+            href="/register"
+            className="font-medium text-primary hover:underline"
+          >
             {t("auth.createOne")}
           </Link>
         </p>

@@ -3,9 +3,11 @@ import { getAuthUser } from '../../common/guards';
 import { AuthService } from './auth.service';
 import type { AuditContext } from '../audit/audit.service';
 import type {
+  ForgotPasswordDto,
   LoginDto,
   RegisterDto,
   ResendCodeDto,
+  ResetPasswordDto,
   VerifyEmailDto,
 } from './auth.dto';
 
@@ -79,6 +81,22 @@ export class AuthController {
   async profile(req: Request, res: Response): Promise<void> {
     const user = getAuthUser(req);
     const result = await authService.getProfile(user.id);
+    res.json(result);
+  }
+
+  async forgotPassword(
+    req: Request<unknown, unknown, ForgotPasswordDto>,
+    res: Response,
+  ): Promise<void> {
+    const result = await authService.forgotPassword(req.body);
+    res.json(result);
+  }
+
+  async resetPassword(
+    req: Request<unknown, unknown, ResetPasswordDto>,
+    res: Response,
+  ): Promise<void> {
+    const result = await authService.resetPassword(req.body);
     res.json(result);
   }
 }

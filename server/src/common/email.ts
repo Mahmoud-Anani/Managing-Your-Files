@@ -48,3 +48,32 @@ export async function sendVerificationEmail(
     html,
   });
 }
+
+export async function sendPasswordResetEmail(
+  to: string,
+  code: string,
+): Promise<void> {
+  const subject = 'Reset your Managing Your Files password';
+  const text =
+    `Hello,\n\n` +
+    `Your password reset code is ${code}.\n` +
+    `It expires in 10 minutes. If you did not request a password reset, you can ignore this email.\n`;
+  const html =
+    `<p>Your password reset code is</p>` +
+    `<h2 style="letter-spacing:0.4em;font-family:monospace">${code}</h2>` +
+    `<p>It expires in 10 minutes.</p>` +
+    `<p>If you did not request a password reset, you can ignore this email.</p>`;
+
+  if (!transporter) {
+    console.warn(`[DEV EMAIL] Password reset code for ${to}: ${code}`);
+    return;
+  }
+
+  await transporter.sendMail({
+    from: env.EMAIL_FROM,
+    to,
+    subject,
+    text,
+    html,
+  });
+}

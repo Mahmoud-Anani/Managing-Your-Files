@@ -11,13 +11,15 @@ import {
   ValidationError,
 } from '../../common/errors';
 import { generateOtpCode, OTP_TTL_MS } from '../../common/otp';
-import { sendVerificationEmail } from '../../common/email';
+import { sendVerificationEmail, sendPasswordResetEmail } from '../../common/email';
 import { toSafeUserDto, type SafeUserDto } from '../../common/user-mapper';
 import { AuditService, type AuditContext } from '../audit/audit.service';
 import type {
+  ForgotPasswordDto,
   LoginDto,
   RegisterDto,
   ResendCodeDto,
+  ResetPasswordDto,
   VerifyEmailDto,
 } from './auth.dto';
 
@@ -238,6 +240,68 @@ export class AuthService {
       throw new NotFoundError('User not found');
     }
     return toSafeUserDto(user);
+  }
+
+  async forgotPassword(
+    dto: ForgotPasswordDto,
+  ): Promise<{ message: string }> {
+    const user = await prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (!user) {
+      return { message: 'If an account exists, a reset code has been sent' };
+    }
+
+    await prisma.verificationCode.deleteMany({ where: { userId: user.id } });
+
+    const code = generateOtpCode();
+    await prisma.verificationCode.create({
+      data: {
+        code,
+        userId: user.id,
+        expiresAt: new Date(Date.now() + OTP_TTL_MS),
+      },
+    });
+
+    await sendPasswordResetEmail(user.email, code);
+
+    return { message: 'If an account exists, a reset code has been sent' };
+  }
+
+  async resetPassword(
+    dto: ResetPasswordDto,
+  ): Promise<{ message: string }> {
+    const user = await prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+    if (!user) {
+      throw new NotFoundError('No account found for this email');
+    }
+
+    const latestCode = await prisma.verificationCode.findFirst({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!latestCode || latestCode.code !== dto.code) {
+      throw new ValidationError('Invalid reset code');
+    }
+    if (latestCode.expiresAt < new Date()) {
+      throw new ValidationError('Reset code has expired');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 12);
+
+    await prisma.$transaction([
+      prisma.verificationCode.deleteMany({ where: { userId: user.id } }),
+      prisma.refreshToken.deleteMany({ where: { userId: user.id } }),
+      prisma.user.update({
+        where: { id: user.id },
+        data: { password: passwordHash },
+      }),
+    ]);
+
+    return { message: 'Password reset successfully' };
   }
 
   private signAccessToken(user: User): string {

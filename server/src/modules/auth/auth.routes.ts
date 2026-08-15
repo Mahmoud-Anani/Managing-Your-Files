@@ -3,13 +3,17 @@ import { asyncHandler, validateBody } from '../../common/async-handler';
 import { authGuard } from '../../common/guards';
 import { AuthController } from './auth.controller';
 import {
+  forgotPasswordSchema,
   loginSchema,
   registerSchema,
   resendCodeSchema,
+  resetPasswordSchema,
   verifyEmailSchema,
+  type ForgotPasswordDto,
   type LoginDto,
   type RegisterDto,
   type ResendCodeDto,
+  type ResetPasswordDto,
   type VerifyEmailDto,
 } from './auth.dto';
 import { resendRateLimit } from './auth.middleware';
@@ -58,6 +62,23 @@ router.post(
 router.post(
   '/logout',
   asyncHandler((req, res) => controller.logout(req, res)),
+);
+
+router.post(
+  '/forgot-password',
+  validateBody(forgotPasswordSchema),
+  resendRateLimit,
+  asyncHandler((req: Request<unknown, unknown, ForgotPasswordDto>, res) =>
+    controller.forgotPassword(req, res),
+  ),
+);
+
+router.post(
+  '/reset-password',
+  validateBody(resetPasswordSchema),
+  asyncHandler((req: Request<unknown, unknown, ResetPasswordDto>, res) =>
+    controller.resetPassword(req, res),
+  ),
 );
 
 router.get(
