@@ -14,7 +14,7 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 
-import { api, fetchFileBlob, formatBytes, formatDate } from "@/lib/api";
+import { api, uploadApi, fetchFileBlob, formatBytes, formatDate } from "@/lib/api";
 import { queryKeys, useFiles } from "@/hooks/use-queries";
 import type { FileSortBy, SafeFileDto, SortOrder } from "@/types";
 
@@ -192,7 +192,7 @@ export default function FilesPage() {
        *
        * multipart/form-data; boundary=...
        */
-      const response = await api.post("/files/upload", formData);
+      const response = await uploadApi.post("/files/upload", formData);
 
       return response.data;
     },

@@ -39,7 +39,13 @@ function toApiError(error: unknown): ApiError {
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080",
-  timeout: 20000,
+  timeout: 30000,
+});
+
+// Upload requests need a longer timeout (multiple files to Cloudinary)
+export const uploadApi = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080",
+  timeout: 120000,
 });
 
 api.interceptors.request.use((config) => {
@@ -52,7 +58,22 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+uploadApi.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = window.localStorage.getItem("myf.token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
 api.interceptors.response.use(
+  (response) => response,
+  (error: unknown) => Promise.reject(toApiError(error)),
+);
+
+uploadApi.interceptors.response.use(
   (response) => response,
   (error: unknown) => Promise.reject(toApiError(error)),
 );

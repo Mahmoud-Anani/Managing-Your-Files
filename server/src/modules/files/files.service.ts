@@ -68,42 +68,42 @@ export class FilesService {
     files: Array<Express.Multer.File>,
     ctx?: AuditContext,
   ): Promise<SafeFileDto[]> {
-    const records = await Promise.all(
-      files.map(async (file) => {
-        const extension = file.originalname
-          .split('.')
-          .pop()
-          ?.toLowerCase()
-          .replace(/[^a-z0-9]/g, '') ?? '';
-        const mimeType = normalizeMimeType(file.originalname, file.mimetype);
-        const extractedText = await extractText({
-          buffer: file.buffer,
+    const records: File[] = [];
+
+    for (const file of files) {
+      const extension = file.originalname
+        .split('.')
+        .pop()
+        ?.toLowerCase()
+        .replace(/[^a-z0-9]/g, '') ?? '';
+      const mimeType = normalizeMimeType(file.originalname, file.mimetype);
+      const extractedText = await extractText({
+        buffer: file.buffer,
+        mimeType,
+        extension,
+      });
+
+      const publicId = cloudinaryPublicId();
+      const uploaded = await uploadToCloudinary({
+        buffer: file.buffer,
+        publicId,
+        mimeType,
+      });
+
+      const record = await prisma.file.create({
+        data: {
+          originalName: file.originalname,
+          storedName: uploaded.publicId,
           mimeType,
+          size: file.size,
           extension,
-        });
-
-        const publicId = cloudinaryPublicId();
-        const uploaded = await uploadToCloudinary({
-          buffer: file.buffer,
-          publicId,
-          mimeType,
-        });
-
-        const record = await prisma.file.create({
-          data: {
-            originalName: file.originalname,
-            storedName: uploaded.publicId,
-            mimeType,
-            size: file.size,
-            extension,
-            url: uploaded.secureUrl,
-            extractedText,
-            userId: user.id,
-          },
-        });
-        return record;
-      }),
-    );
+          url: uploaded.secureUrl,
+          extractedText,
+          userId: user.id,
+        },
+      });
+      records.push(record);
+    }
 
     for (const record of records) {
       await auditService.log({
