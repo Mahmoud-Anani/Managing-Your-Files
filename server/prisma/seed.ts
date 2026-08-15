@@ -1,7 +1,8 @@
 import 'dotenv/config';
 import { z } from 'zod';
-import { PrismaClient, Role } from '@prisma/client';
+import { Role } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { prisma } from '../src/config/prisma';
 
 const seedEnvSchema = z.object({
   ADMIN_EMAIL: z.string().email(),
@@ -14,8 +15,6 @@ const seedEnvSchema = z.object({
 });
 
 const env = seedEnvSchema.parse(process.env);
-
-const prisma = new PrismaClient();
 
 async function seedAdmin(): Promise<void> {
   const existing = await prisma.user.findUnique({

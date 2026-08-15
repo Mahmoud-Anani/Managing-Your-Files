@@ -2,7 +2,9 @@ import { PrismaClient, Prisma } from '@prisma/client';
 
 const MAX_RETRIES = 5;
 const BASE_DELAY_MS = 1000;
-const P1001_RETRY_DELAY_MS = 2000;
+// P1001 retry configuration for Accelerate idle-timeout handling
+const P1001_MAX_RETRIES = 3;
+const P1001_BASE_DELAY_MS = 500; // Start with 500ms, exponential backoff
 
 function createPrismaClient(): PrismaClient {
   const client = new PrismaClient({
@@ -12,27 +14,47 @@ function createPrismaClient(): PrismaClient {
         : ['error'],
   });
 
+  /**
+   * Middleware to handle P1001 errors from Accelerate idle-timeout disconnects.
+   * Accelerate can silently close idle connections, so we retry with exponential backoff.
+   */
   client.$use(async (params, next) => {
-    const result = await next(params);
-    return result;
-  });
+    let lastError: unknown;
 
-  client.$use(async (params, next) => {
-    try {
-      return await next(params);
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P1001'
-      ) {
-        console.warn(
-          `[Prisma] P1001 — retrying query in ${P1001_RETRY_DELAY_MS}ms…`,
-        );
-        await sleep(P1001_RETRY_DELAY_MS);
-        return next(params);
+    for (let attempt = 1; attempt <= P1001_MAX_RETRIES; attempt++) {
+      try {
+        return await next(params);
+      } catch (error) {
+        lastError = error;
+
+        // Only retry on P1001 errors (database unreachable)
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P1001'
+        ) {
+          // If this was the last retry attempt, rethrow
+          if (attempt === P1001_MAX_RETRIES) {
+            console.error(
+              `[Prisma] P1001 error persisted after ${P1001_MAX_RETRIES} retries, giving up…`,
+            );
+            throw error;
+          }
+
+          // Calculate exponential backoff delay
+          const delayMs = P1001_BASE_DELAY_MS * Math.pow(2, attempt - 1);
+          console.warn(
+            `[Prisma] P1001 (attempt ${attempt}/${P1001_MAX_RETRIES}) — retrying in ${delayMs}ms…`,
+          );
+          await sleep(delayMs);
+        } else {
+          // Not a P1001 error, rethrow immediately
+          throw error;
+        }
       }
-      throw error;
     }
+
+    // Should not reach here, but throw last error if we do
+    throw lastError;
   });
 
   return client;
