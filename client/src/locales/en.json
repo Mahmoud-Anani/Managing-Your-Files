@@ -399,6 +399,8 @@
     "noFilesFound": "No files found",
     "adjustFilters": "Try adjusting your search or filters.",
     "uploadFirstFile": "Upload your first file to get started.",
+    "dropHere": "Drop files here",
+    "dropHint": "Release to upload your files",
     "name": "Name",
     "type": "Type",
     "size": "Size",

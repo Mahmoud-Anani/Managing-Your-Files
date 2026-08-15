@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -578,19 +578,72 @@ function UploadCard({
   onUpload: (files: File[]) => void;
 }) {
   const { t } = useTranslation();
+  const [dragging, setDragging] = useState(false);
+  const dragCounter = useRef(0);
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current++;
+    if (e.dataTransfer.types.includes("Files")) {
+      setDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current--;
+    if (dragCounter.current === 0) {
+      setDragging(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current = 0;
+    setDragging(false);
+    if (uploading) return;
+    const files = Array.from(e.dataTransfer.files).filter((f) =>
+      ACCEPTED_FILE_TYPES.includes(f.type),
+    );
+    if (files.length > 0) {
+      onUpload(files);
+    }
+  };
 
   return (
-    <Card className="border-dashed">
+    <Card
+      className={`border-dashed transition-colors ${
+        dragging
+          ? "border-primary bg-primary/5"
+          : "border-border"
+      }`}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       <CardContent className="flex flex-col items-center gap-3 p-6 text-center">
-        <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+        <div className={`flex size-12 items-center justify-center rounded-full transition-colors ${
+          dragging ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary"
+        }`}>
           <ImageIcon className="size-6" />
         </div>
 
         <div>
-          <p className="text-sm font-medium">{t("files.uploadFiles")}</p>
+          <p className="text-sm font-medium">
+            {dragging ? t("files.dropHere") : t("files.uploadFiles")}
+          </p>
 
           <p className="text-sm text-muted-foreground">
-            {t("files.uploadHint")}
+            {dragging ? t("files.dropHint") : t("files.uploadHint")}
           </p>
 
           <p className="mt-1 text-xs text-muted-foreground">
@@ -608,10 +661,6 @@ function UploadCard({
             disabled={uploading}
             className="hidden"
             onChange={(event) => {
-              // Take a stable snapshot of the FileList *before* the input
-              // is reset below — FileList is live and tied to the input,
-              // so resetting it first would leave us with an empty array
-              // by the time the async mutation actually runs.
               const files = Array.from(event.target.files ?? []);
               event.target.value = "";
               onUpload(files);
