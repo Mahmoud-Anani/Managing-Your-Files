@@ -20,7 +20,12 @@ const errorResponse = (
     'application/json': {
       schema: { $ref: '#/components/schemas/Error' },
       example: {
-        statusCode: exampleError === 'UnauthorizedError' ? 401 : 400,
+        statusCode:
+          exampleError === 'UnauthorizedError' || exampleError === 'ForbiddenError'
+            ? exampleError === 'ForbiddenError'
+              ? 403
+              : 401
+            : 400,
         message: exampleMessage,
         error: exampleError,
       },
@@ -32,8 +37,28 @@ export const openapi = {
   openapi: '3.0.3',
   info: {
     title: 'Managing Your Files — API',
-    version: '1.0.0',
-    description: `REST API for the **Managing Your Files** platform.\n\nEvery protected endpoint requires a JWT access token obtained from \`POST /api/v1/auth/login\` (or by registering and verifying your email). Click **Authorize** and paste your token to enable authenticated requests.\n\n### Authentication flow\n1. Register an account (\`POST /api/v1/auth/register\`).\n2. Verify your email using the 6-digit code (\`POST /api/v1/auth/verify-email\`).\n3. Log in to receive a JWT (\`POST /api/v1/auth/login\`).`,
+    version: '2.0.0',
+    description: [
+      'REST API for the **Managing Your Files** platform.',
+      '',
+      '### Authentication',
+      'This API uses **HttpOnly cookies** for authentication. After logging in via `POST /api/v1/auth/login`, the server sets `access_token` and `refresh_token` cookies automatically. No manual token handling is needed from the client — requests include cookies via `withCredentials`.',
+      '',
+      '**Flow:**',
+      '1. Register (`POST /api/v1/auth/register`).',
+      '2. Verify your email with the 6-digit code (`POST /api/v1/auth/verify-email`).',
+      '3. Log in (`POST /api/v1/auth/login`) — cookies are set automatically.',
+      '4. The access token expires in 15 minutes; use `POST /api/v1/auth/refresh` to renew it.',
+      '',
+      '### File Sharing',
+      'Files can be shared with other users. Each share has a permission level:',
+      '- **VIEW** — the recipient can open, preview, and download the file.',
+      '- **EDIT** — the recipient can also delete the file.',
+      '',
+      '### Rate Limits',
+      '- `POST /api/v1/auth/resend-code` — 1 request per 60 seconds per email.',
+      '- `POST /api/v1/auth/forgot-password` — 1 request per 60 seconds per email.',
+    ].join('\n'),
     contact: {
       name: 'Managing Your Files',
       email: env.GMAIL_USER || 'support@example.com',
@@ -47,20 +72,21 @@ export const openapi = {
     { url: `http://localhost:${env.PORT}`, description: 'Local development server' },
   ],
   tags: [
-    { name: 'Authentication', description: 'Register, verify, login and profile operations' },
+    { name: 'Authentication', description: 'Register, verify, login, profile and settings' },
     { name: 'Users', description: 'Administrative user management' },
-    { name: 'Files', description: 'Upload, browse and manage your own files' },
+    { name: 'Files', description: 'Upload, browse, download, preview and manage your files' },
+    { name: 'Sharing', description: 'Share files with other users and manage permissions' },
     { name: 'Admin', description: 'Platform-wide file administration' },
     { name: 'Stats', description: 'Usage statistics for users and administrators' },
   ],
   components: {
     securitySchemes: {
       bearerAuth: {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
+        type: 'apiKey',
+        in: 'cookie',
+        name: 'access_token',
         description:
-          'JWT access token. Get one via `POST /api/v1/auth/login` — it is issued for 7 days.',
+          'HttpOnly cookie set by `POST /api/v1/auth/login`. The client must send `withCredentials: true`.',
       },
     },
     schemas: {
@@ -75,6 +101,7 @@ export const openapi = {
             enum: [
               'ValidationError',
               'UnauthorizedError',
+              'ForbiddenError',
               'ConflictError',
               'NotFoundError',
             ],
@@ -86,6 +113,11 @@ export const openapi = {
         type: 'string',
         enum: ['USER', 'ADMIN'],
         description: 'Account role. ADMIN grants access to administrative endpoints.',
+      },
+      Permission: {
+        type: 'string',
+        enum: ['VIEW', 'EDIT'],
+        description: 'Share permission level. VIEW allows read-only access; EDIT allows deletion.',
       },
       SafeUser: {
         type: 'object',
@@ -110,11 +142,11 @@ export const openapi = {
       },
       AuthResponse: {
         type: 'object',
-        required: ['token', 'user'],
+        required: ['user'],
         properties: {
-          token: { type: 'string', description: 'JWT access token (Bearer).' },
           user: { $ref: '#/components/schemas/SafeUser' },
         },
+        description: 'Tokens are set as HttpOnly cookies (access_token, refresh_token). The response body contains only the user object.',
       },
       RegisterResponse: {
         type: 'object',
@@ -173,7 +205,7 @@ export const openapi = {
           mimeType: { type: 'string', example: 'application/pdf' },
           size: { type: 'integer', format: 'int64', example: 102400 },
           extension: { type: 'string', example: 'pdf' },
-          url: { type: 'string', format: 'uri', description: 'Cloudinary CDN URL of the file.', example: 'https://res.cloudinary.com/<cloud_name>/image/upload/v1/managing-your-files/25f7d1af-082a-476b-a59a-0c4085c0dc15.pdf' },
+          url: { type: 'string', format: 'uri', description: 'Cloudinary CDN URL of the file.', example: 'https://res.cloudinary.com/d0u89ige/image/upload/v1/managing-your-files/...' },
           userId: { type: 'string', format: 'uuid', description: 'Owner of the file.' },
           createdAt: { type: 'string', format: 'date-time' },
         },
@@ -202,6 +234,35 @@ export const openapi = {
         properties: {
           data: { type: 'array', items: { $ref: '#/components/schemas/SafeFile' } },
           pagination: { $ref: '#/components/schemas/PaginationMeta' },
+        },
+      },
+      FileShare: {
+        type: 'object',
+        required: ['id', 'fileId', 'sharedById', 'sharedWithId', 'permission', 'createdAt'],
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          fileId: { type: 'string', format: 'uuid' },
+          sharedById: { type: 'string', format: 'uuid' },
+          sharedWithId: { type: 'string', format: 'uuid' },
+          sharedBy: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', format: 'uuid' },
+              name: { type: 'string' },
+              email: { type: 'string', format: 'email' },
+            },
+          },
+          sharedWith: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', format: 'uuid' },
+              name: { type: 'string' },
+              email: { type: 'string', format: 'email' },
+            },
+          },
+          file: { $ref: '#/components/schemas/SafeFile' },
+          permission: { $ref: '#/components/schemas/Permission' },
+          createdAt: { type: 'string', format: 'date-time' },
         },
       },
       TypeStat: {
@@ -307,6 +368,68 @@ export const openapi = {
           password: { type: 'string', format: 'password', example: 'Password123' },
         },
       },
+      UpdateProfileRequest: {
+        type: 'object',
+        required: ['name'],
+        properties: {
+          name: { type: 'string', minLength: 2, maxLength: 100, example: 'Jane Doe' },
+        },
+      },
+      ChangePasswordRequest: {
+        type: 'object',
+        required: ['currentPassword', 'newPassword', 'confirmPassword'],
+        properties: {
+          currentPassword: { type: 'string', format: 'password', example: 'Password123' },
+          newPassword: {
+            type: 'string',
+            format: 'password',
+            minLength: 8,
+            maxLength: 72,
+            description: 'At least 8 characters and must contain at least one number.',
+            example: 'NewPassword456',
+          },
+          confirmPassword: { type: 'string', format: 'password', example: 'NewPassword456' },
+        },
+      },
+      DeleteAccountRequest: {
+        type: 'object',
+        required: ['password'],
+        properties: {
+          password: { type: 'string', format: 'password', description: 'Current password to confirm deletion.', example: 'Password123' },
+        },
+      },
+      ForgotPasswordRequest: {
+        type: 'object',
+        required: ['email'],
+        properties: {
+          email: { type: 'string', format: 'email', example: 'jane@example.com' },
+        },
+      },
+      ResetPasswordRequest: {
+        type: 'object',
+        required: ['email', 'code', 'password', 'confirmPassword'],
+        properties: {
+          email: { type: 'string', format: 'email', example: 'jane@example.com' },
+          code: { type: 'string', pattern: '^\\d{6}$', example: '483920' },
+          password: { type: 'string', format: 'password', minLength: 8, maxLength: 72, example: 'NewPassword456' },
+          confirmPassword: { type: 'string', format: 'password', example: 'NewPassword456' },
+        },
+      },
+      ShareFileRequest: {
+        type: 'object',
+        required: ['email'],
+        properties: {
+          email: { type: 'string', format: 'email', description: 'Email of the user to share with.', example: 'bob@example.com' },
+          permission: { $ref: '#/components/schemas/Permission', default: 'VIEW' },
+        },
+      },
+      UpdateShareRequest: {
+        type: 'object',
+        required: ['permission'],
+        properties: {
+          permission: { $ref: '#/components/schemas/Permission' },
+        },
+      },
       UpdateRoleRequest: {
         type: 'object',
         required: ['role'],
@@ -317,6 +440,7 @@ export const openapi = {
     },
   },
   paths: {
+    // ── Auth ──────────────────────────────────────────────────
     '/api/v1/auth/register': {
       post: {
         tags: ['Authentication'],
@@ -414,7 +538,8 @@ export const openapi = {
       post: {
         tags: ['Authentication'],
         summary: 'Log in',
-        description: 'Authenticates with email and password and returns a JWT access token.',
+        description:
+          'Authenticates with email and password. Sets `access_token` (15 min) and `refresh_token` (7 days) as HttpOnly cookies. Returns the user object in the body.',
         operationId: 'login',
         requestBody: {
           required: true,
@@ -426,12 +551,11 @@ export const openapi = {
         },
         responses: {
           '200': {
-            description: 'Authenticated. Use the token as `Authorization: Bearer <token>`.',
+            description: 'Authenticated. Cookies are set automatically.',
             content: {
               'application/json': {
                 schema: { $ref: '#/components/schemas/AuthResponse' },
                 example: {
-                  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9…',
                   user: {
                     id: '10ef975f-4688-4e57-ae0c-6ab07d459537',
                     name: 'Jane Doe',
@@ -450,11 +574,109 @@ export const openapi = {
         },
       },
     },
+    '/api/v1/auth/refresh': {
+      post: {
+        tags: ['Authentication'],
+        summary: 'Refresh access token',
+        description:
+          'Uses the `refresh_token` HttpOnly cookie to issue a new `access_token`. The client interceptor calls this automatically on 401.',
+        operationId: 'refreshToken',
+        responses: {
+          '200': {
+            description: 'New access token set as HttpOnly cookie.',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/SafeUser' },
+              },
+            },
+          },
+          '401': errorResponse('Refresh token is missing, invalid or expired.', 'Authentication required', 'UnauthorizedError'),
+        },
+      },
+    },
+    '/api/v1/auth/logout': {
+      post: {
+        tags: ['Authentication'],
+        summary: 'Log out',
+        description: 'Clears the refresh token from the database and clears both cookie fields.',
+        operationId: 'logout',
+        responses: {
+          '200': {
+            description: 'Logged out.',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/MessageResponse' },
+                example: { message: 'Logged out' },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/api/v1/auth/forgot-password': {
+      post: {
+        tags: ['Authentication'],
+        summary: 'Request a password reset code',
+        description:
+          'Sends a 6-digit reset code to the email if an account exists. Subject to a 60-second cooldown.',
+        operationId: 'forgotPassword',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ForgotPasswordRequest' },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Message returned (same whether account exists or not).',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/MessageResponse' },
+                example: { message: 'If an account exists, a reset code has been sent' },
+              },
+            },
+          },
+          '400': errorResponse('Rate limited.', 'Please wait 60 seconds before requesting another code'),
+        },
+      },
+    },
+    '/api/v1/auth/reset-password': {
+      post: {
+        tags: ['Authentication'],
+        summary: 'Reset password with code',
+        description:
+          'Verifies the 6-digit code and sets a new password. Invalidates all existing refresh tokens.',
+        operationId: 'resetPassword',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ResetPasswordRequest' },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Password updated.',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/MessageResponse' },
+                example: { message: 'Password reset successfully' },
+              },
+            },
+          },
+          '400': errorResponse('Invalid code, code expired, or passwords do not match.', 'Invalid reset code'),
+          '404': errorResponse('No account found for this email.', 'No account found for this email', 'NotFoundError'),
+        },
+      },
+    },
     '/api/v1/auth/profile': {
       get: {
         tags: ['Authentication'],
         summary: 'Get the current user',
-        description: 'Returns the authenticated user’s profile.',
+        description: 'Returns the authenticated user\'s profile.',
         operationId: 'getProfile',
         security: bearer,
         responses: {
@@ -469,7 +691,98 @@ export const openapi = {
           '401': errorResponse('Missing or invalid token.', 'Authentication required', 'UnauthorizedError'),
         },
       },
+      put: {
+        tags: ['Authentication', 'Settings'],
+        summary: 'Update profile name',
+        description: 'Updates the authenticated user\'s display name.',
+        operationId: 'updateProfile',
+        security: bearer,
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/UpdateProfileRequest' },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Updated user.',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/SafeUser' },
+              },
+            },
+          },
+          '400': errorResponse('Invalid body.', 'name: Name must be at least 2 characters'),
+          '401': errorResponse('Missing or invalid token.', 'Authentication required', 'UnauthorizedError'),
+        },
+      },
     },
+    '/api/v1/auth/password': {
+      put: {
+        tags: ['Authentication', 'Settings'],
+        summary: 'Change password',
+        description:
+          'Changes the authenticated user\'s password. Requires the current password. Invalidates all refresh tokens.',
+        operationId: 'changePassword',
+        security: bearer,
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ChangePasswordRequest' },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Password changed.',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/MessageResponse' },
+                example: { message: 'Password changed successfully' },
+              },
+            },
+          },
+          '400': errorResponse('Invalid body or passwords do not match.', 'passwords: Passwords do not match'),
+          '401': errorResponse('Current password is incorrect.', 'Current password is incorrect', 'UnauthorizedError'),
+        },
+      },
+    },
+    '/api/v1/auth/account': {
+      delete: {
+        tags: ['Authentication', 'Settings'],
+        summary: 'Delete account',
+        description:
+          'Permanently deletes the authenticated user, their files, shares, and tokens. Requires password confirmation.',
+        operationId: 'deleteAccount',
+        security: bearer,
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/DeleteAccountRequest' },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Account deleted.',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/MessageResponse' },
+                example: { message: 'Account deleted successfully' },
+              },
+            },
+          },
+          '400': errorResponse('Invalid password.', 'Password is required to delete account'),
+          '401': errorResponse('Password is incorrect.', 'Password is incorrect', 'UnauthorizedError'),
+        },
+      },
+    },
+
+    // ── Users (Admin) ────────────────────────────────────────
     '/api/v1/users': {
       get: {
         tags: ['Users'],
@@ -497,14 +810,14 @@ export const openapi = {
           },
           '400': errorResponse('Invalid query parameters.', 'limit: Expected number, received string'),
           '401': errorResponse('Missing or invalid token.', 'Authentication required', 'UnauthorizedError'),
-          '403': errorResponse('Requires the ADMIN role.', 'Insufficient permissions', 'UnauthorizedError'),
+          '403': errorResponse('Requires the ADMIN role.', 'Insufficient permissions', 'ForbiddenError'),
         },
       },
     },
     '/api/v1/users/{id}': {
       patch: {
         tags: ['Users'],
-        summary: 'Update a user’s role',
+        summary: 'Update a user\'s role',
         description: 'Changes the role of another user. You cannot change your own role. **ADMIN only.**',
         operationId: 'updateUserRole',
         security: bearer,
@@ -530,7 +843,7 @@ export const openapi = {
           },
           '400': errorResponse('Invalid id, invalid role, or self-role change.', 'You cannot change your own role'),
           '401': errorResponse('Missing or invalid token.', 'Authentication required', 'UnauthorizedError'),
-          '403': errorResponse('Requires the ADMIN role.', 'Insufficient permissions', 'UnauthorizedError'),
+          '403': errorResponse('Requires the ADMIN role.', 'Insufficient permissions', 'ForbiddenError'),
           '404': errorResponse('User not found.', 'User not found', 'NotFoundError'),
         },
       },
@@ -538,7 +851,7 @@ export const openapi = {
         tags: ['Users'],
         summary: 'Delete a user',
         description:
-          'Permanently deletes a user, their files and verification codes (cascade). You cannot delete your own account. **ADMIN only.**',
+          'Permanently deletes a user, their files, shares and verification codes (cascade). You cannot delete your own account. **ADMIN only.**',
         operationId: 'deleteUser',
         security: bearer,
         parameters: [
@@ -556,17 +869,19 @@ export const openapi = {
           },
           '400': errorResponse('Invalid id or self-deletion.', 'You cannot delete your own account'),
           '401': errorResponse('Missing or invalid token.', 'Authentication required', 'UnauthorizedError'),
-          '403': errorResponse('Requires the ADMIN role.', 'Insufficient permissions', 'UnauthorizedError'),
+          '403': errorResponse('Requires the ADMIN role.', 'Insufficient permissions', 'ForbiddenError'),
           '404': errorResponse('User not found.', 'User not found', 'NotFoundError'),
         },
       },
     },
+
+    // ── Files ─────────────────────────────────────────────────
     '/api/v1/files/upload': {
       post: {
         tags: ['Files'],
         summary: 'Upload files',
         description:
-          `Uploads up to 10 files at once as \`multipart/form-data\` using the field name \`files\`.\n\nAllowed types: PNG, JPEG, GIF, WebP, BMP, SVG, PDF, DOC, DOCX, ODT, RTF, XLS, XLSX, PPT, PPTX, TXT, Markdown, CSV, HTML, XML, JSON, YAML. Maximum file size is configurable via \`MAX_FILE_SIZE_MB\`. Text is extracted from PDF, DOCX and plain-text files.`,
+          `Uploads up to 10 files at once as \`multipart/form-data\` using the field name \`files\`.\n\nAllowed types: PNG, JPEG, GIF, WebP, BMP, SVG, PDF, DOC, DOCX, ODT, RTF, XLS, XLSX, PPT, PPTX, TXT, Markdown, CSV, HTML, XML, JSON, YAML. Text is extracted from PDF, DOCX and plain-text files.`,
         operationId: 'uploadFiles',
         security: bearer,
         requestBody: {
@@ -582,13 +897,6 @@ export const openapi = {
                     items: { type: 'string', format: 'binary' },
                     description: 'One or more files. Up to 10 per request.',
                   },
-                },
-              },
-              encoding: {
-                files: {
-                  style: 'form',
-                  explode: true,
-                  allowReserved: false,
                 },
               },
             },
@@ -616,7 +924,7 @@ export const openapi = {
         tags: ['Files'],
         summary: 'List your files',
         description:
-          'Paginated list of the authenticated user’s files. Supports search by name, filtering by extension and sorting.',
+          'Paginated list of the authenticated user\'s files. Supports search by name, filtering by extension and sorting.',
         operationId: 'listFiles',
         security: bearer,
         parameters: [
@@ -629,14 +937,13 @@ export const openapi = {
         ],
         responses: {
           '200': {
-            description: 'Paginated list of the user’s files.',
+            description: 'Paginated list of the user\'s files.',
             content: {
               'application/json': {
                 schema: { $ref: '#/components/schemas/PaginatedFiles' },
               },
             },
           },
-          '400': errorResponse('Invalid query parameters.', 'type: Type must be an extension like pdf or png'),
           '401': errorResponse('Missing or invalid token.', 'Authentication required', 'UnauthorizedError'),
         },
       },
@@ -644,8 +951,9 @@ export const openapi = {
     '/api/v1/files/{id}': {
       get: {
         tags: ['Files'],
-        summary: 'Get a file',
-        description: 'Returns full file details, including any extracted text. Users can only access their own files.',
+        summary: 'Get file details',
+        description:
+          'Returns full file details, including any extracted text. Accessible to the owner, admins, and users the file is shared with.',
         operationId: 'getFile',
         security: bearer,
         parameters: [
@@ -660,16 +968,16 @@ export const openapi = {
               },
             },
           },
-          '400': errorResponse('Invalid file id.', 'File id is required'),
           '401': errorResponse('Missing or invalid token.', 'Authentication required', 'UnauthorizedError'),
-          '403': errorResponse('The file belongs to another user.', 'You do not have permission to access this file'),
+          '403': errorResponse('No access to this file.', 'You do not have access to this file', 'ForbiddenError'),
           '404': errorResponse('File not found.', 'File not found', 'NotFoundError'),
         },
       },
       delete: {
         tags: ['Files'],
         summary: 'Delete a file',
-        description: 'Deletes the file and its Cloudinary asset. Users can only delete their own files.',
+        description:
+          'Deletes the file and its Cloudinary asset. Requires EDIT permission, ownership, or ADMIN role.',
         operationId: 'deleteFile',
         security: bearer,
         parameters: [
@@ -685,13 +993,200 @@ export const openapi = {
               },
             },
           },
-          '400': errorResponse('Invalid file id.', 'File id is required'),
           '401': errorResponse('Missing or invalid token.', 'Authentication required', 'UnauthorizedError'),
-          '403': errorResponse('The file belongs to another user.', 'You do not have permission to access this file'),
+          '403': errorResponse('No permission to modify this file.', 'You do not have permission to modify this file', 'ForbiddenError'),
           '404': errorResponse('File not found.', 'File not found', 'NotFoundError'),
         },
       },
     },
+    '/api/v1/files/{id}/download': {
+      get: {
+        tags: ['Files'],
+        summary: 'Download a file',
+        description:
+          'Streams or redirects to the Cloudinary asset for download. Accessible to the owner, admins, and users the file is shared with.',
+        operationId: 'downloadFile',
+        security: bearer,
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' }, description: 'File id.' },
+        ],
+        responses: {
+          '200': {
+            description: 'File stream (application/octet-stream).',
+            content: {
+              'application/octet-stream': {
+                schema: { type: 'string', format: 'binary' },
+              },
+            },
+          },
+          '401': errorResponse('Missing or invalid token.', 'Authentication required', 'UnauthorizedError'),
+          '403': errorResponse('No access to this file.', 'You do not have access to this file', 'ForbiddenError'),
+          '404': errorResponse('File not found.', 'File not found', 'NotFoundError'),
+        },
+      },
+    },
+    '/api/v1/files/{id}/preview': {
+      get: {
+        tags: ['Files'],
+        summary: 'Preview a file',
+        description:
+          'Streams or redirects to the Cloudinary asset for inline preview. Accessible to the owner, admins, and users the file is shared with.',
+        operationId: 'previewFile',
+        security: bearer,
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' }, description: 'File id.' },
+        ],
+        responses: {
+          '200': {
+            description: 'File stream with the original MIME type.',
+            content: {
+              '*/*': {
+                schema: { type: 'string', format: 'binary' },
+              },
+            },
+          },
+          '401': errorResponse('Missing or invalid token.', 'Authentication required', 'UnauthorizedError'),
+          '403': errorResponse('No access to this file.', 'You do not have access to this file', 'ForbiddenError'),
+          '404': errorResponse('File not found.', 'File not found', 'NotFoundError'),
+        },
+      },
+    },
+
+    // ── Sharing ───────────────────────────────────────────────
+    '/api/v1/sharing/{fileId}': {
+      post: {
+        tags: ['Sharing'],
+        summary: 'Share a file',
+        description:
+          'Shares a file with another user by email. The caller must be the file owner. Default permission is VIEW.',
+        operationId: 'shareFile',
+        security: bearer,
+        parameters: [
+          { name: 'fileId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' }, description: 'File id to share.' },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ShareFileRequest' },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'File shared.',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/FileShare' },
+              },
+            },
+          },
+          '400': errorResponse('Invalid body.', 'email: Invalid email address'),
+          '401': errorResponse('Missing or invalid token.', 'Authentication required', 'UnauthorizedError'),
+          '403': errorResponse('You can only share your own files.', 'You can only share your own files', 'ForbiddenError'),
+          '404': errorResponse('File or user not found.', 'User not found with this email', 'NotFoundError'),
+          '409': errorResponse('Already shared with this user.', 'File is already shared with this user', 'ConflictError'),
+        },
+      },
+    },
+    '/api/v1/sharing/shared-by-me': {
+      get: {
+        tags: ['Sharing'],
+        summary: 'Files I shared',
+        description: 'Returns all files the authenticated user has shared with others.',
+        operationId: 'getSharedByMe',
+        security: bearer,
+        responses: {
+          '200': {
+            description: 'List of shares created by the user.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/FileShare' },
+                },
+              },
+            },
+          },
+          '401': errorResponse('Missing or invalid token.', 'Authentication required', 'UnauthorizedError'),
+        },
+      },
+    },
+    '/api/v1/sharing/shared-with-me': {
+      get: {
+        tags: ['Sharing'],
+        summary: 'Files shared with me',
+        description: 'Returns all files other users have shared with the authenticated user.',
+        operationId: 'getSharedWithMe',
+        security: bearer,
+        responses: {
+          '200': {
+            description: 'List of shares received by the user.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/FileShare' },
+                },
+              },
+            },
+          },
+          '401': errorResponse('Missing or invalid token.', 'Authentication required', 'UnauthorizedError'),
+        },
+      },
+    },
+    '/api/v1/sharing/{id}': {
+      put: {
+        tags: ['Sharing'],
+        summary: 'Update share permission',
+        description: 'Changes the permission level of an existing share. The caller must be the one who created the share.',
+        operationId: 'updateShare',
+        security: bearer,
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' }, description: 'Share id.' },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/UpdateShareRequest' },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Updated share.',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/FileShare' },
+              },
+            },
+          },
+          '400': errorResponse('Invalid body.', 'permission: Invalid enum value'),
+          '401': errorResponse('Missing or invalid token.', 'Authentication required', 'UnauthorizedError'),
+          '403': errorResponse('You can only update shares you created.', 'You can only update shares you created', 'ForbiddenError'),
+          '404': errorResponse('Share not found.', 'Share not found', 'NotFoundError'),
+        },
+      },
+      delete: {
+        tags: ['Sharing'],
+        summary: 'Remove a share',
+        description: 'Removes access for the shared user. Either the creator or the recipient can remove it.',
+        operationId: 'removeShare',
+        security: bearer,
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' }, description: 'Share id.' },
+        ],
+        responses: {
+          '204': { description: 'Share removed.' },
+          '401': errorResponse('Missing or invalid token.', 'Authentication required', 'UnauthorizedError'),
+          '403': errorResponse('Not authorized.', 'Not authorized to remove this share', 'ForbiddenError'),
+          '404': errorResponse('Share not found.', 'Share not found', 'NotFoundError'),
+        },
+      },
+    },
+
+    // ── Admin ─────────────────────────────────────────────────
     '/api/v1/admin/files': {
       get: {
         tags: ['Admin'],
@@ -718,9 +1213,8 @@ export const openapi = {
               },
             },
           },
-          '400': errorResponse('Invalid query parameters.', 'userId: Invalid user id'),
           '401': errorResponse('Missing or invalid token.', 'Authentication required', 'UnauthorizedError'),
-          '403': errorResponse('Requires the ADMIN role.', 'Insufficient permissions', 'UnauthorizedError'),
+          '403': errorResponse('Requires the ADMIN role.', 'Insufficient permissions', 'ForbiddenError'),
         },
       },
     },
@@ -744,13 +1238,36 @@ export const openapi = {
               },
             },
           },
-          '400': errorResponse('Invalid file id.', 'File id is required'),
           '401': errorResponse('Missing or invalid token.', 'Authentication required', 'UnauthorizedError'),
-          '403': errorResponse('Requires the ADMIN role.', 'Insufficient permissions', 'UnauthorizedError'),
+          '403': errorResponse('Requires the ADMIN role.', 'Insufficient permissions', 'ForbiddenError'),
           '404': errorResponse('File not found.', 'File not found', 'NotFoundError'),
         },
       },
     },
+    '/api/v1/admin/audit-logs': {
+      get: {
+        tags: ['Admin'],
+        summary: 'List audit logs',
+        description:
+          'Paginated audit log of important actions across the platform. Supports search and filtering. **ADMIN only.**',
+        operationId: 'listAuditLogs',
+        security: bearer,
+        parameters: [
+          { name: 'page', in: 'query', required: false, schema: { type: 'integer', minimum: 1, default: 1 } },
+          { name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 } },
+          { name: 'action', in: 'query', required: false, schema: { type: 'string' }, description: 'Filter by action type.' },
+          { name: 'userId', in: 'query', required: false, schema: { type: 'string', format: 'uuid' }, description: 'Filter by user.' },
+          { name: 'search', in: 'query', required: false, schema: { type: 'string' }, description: 'Search by user, entity or details.' },
+        ],
+        responses: {
+          '200': { description: 'Paginated audit logs.' },
+          '401': errorResponse('Missing or invalid token.', 'Authentication required', 'UnauthorizedError'),
+          '403': errorResponse('Requires the ADMIN role.', 'Insufficient permissions', 'ForbiddenError'),
+        },
+      },
+    },
+
+    // ── Stats ─────────────────────────────────────────────────
     '/api/v1/stats/user': {
       get: {
         tags: ['Stats'],
@@ -768,22 +1285,9 @@ export const openapi = {
             content: {
               'application/json': {
                 schema: { $ref: '#/components/schemas/UserStats' },
-                example: {
-                  totalFiles: 21,
-                  totalStorageBytes: 52428800,
-                  typeBreakdown: [
-                    { extension: 'pdf', count: 12, sizeBytes: 4096000 },
-                    { extension: 'png', count: 9, sizeBytes: 1048576 },
-                  ],
-                  dailyUploads: [
-                    { date: '2026-08-08', count: 0 },
-                    { date: '2026-08-14', count: 3 },
-                  ],
-                },
               },
             },
           },
-          '400': errorResponse('Invalid `days` value.', 'days: Number must be less than or equal to 30'),
           '401': errorResponse('Missing or invalid token.', 'Authentication required', 'UnauthorizedError'),
         },
       },
@@ -806,7 +1310,27 @@ export const openapi = {
             },
           },
           '401': errorResponse('Missing or invalid token.', 'Authentication required', 'UnauthorizedError'),
-          '403': errorResponse('Requires the ADMIN role.', 'Insufficient permissions', 'UnauthorizedError'),
+          '403': errorResponse('Requires the ADMIN role.', 'Insufficient permissions', 'ForbiddenError'),
+        },
+      },
+    },
+
+    // ── Health ────────────────────────────────────────────────
+    '/api/v1/health': {
+      get: {
+        tags: ['Health'],
+        summary: 'Health check',
+        description: 'Returns 200 if the server is running.',
+        operationId: 'healthCheck',
+        responses: {
+          '200': {
+            description: 'Server is healthy.',
+            content: {
+              'application/json': {
+                example: { status: 'ok' },
+              },
+            },
+          },
         },
       },
     },

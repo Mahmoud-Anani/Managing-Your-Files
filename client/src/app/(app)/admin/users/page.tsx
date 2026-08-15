@@ -47,7 +47,7 @@ export default function AdminUsersPage() {
     () => ({
       page,
       limit: PAGE_SIZE,
-      search,
+      ...(search ? { search } : {}),
       role: roleFilter || undefined,
       sortBy,
       sortOrder,

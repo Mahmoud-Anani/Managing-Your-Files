@@ -53,10 +53,10 @@ async function start(): Promise<void> {
   try {
     await connectWithRetry();
     server = app.listen(env.PORT, () => {
-      console.warn(`Server running on http://localhost:${env.PORT}`);
-      console.warn(
-        `Docs Swagger Server running on http://localhost:${env.PORT}/api/v1/docs`,
-      );
+      const base = `http://localhost:${env.PORT}`;
+      console.warn(`[Server] Running on ${base}`);
+      console.warn(`[Server] Swagger UI  → ${base}/api/v1/docs`);
+      console.warn(`[Server] Swagger JSON → ${base}/api/v1/docs.json`);
     });
   } catch (error) {
     console.error('Failed to start server', error);
