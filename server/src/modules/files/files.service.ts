@@ -231,7 +231,7 @@ export class FilesService {
     ctx?: AuditContext,
   ): Promise<{ message: string }> {
     const file = await findFile(fileId, false);
-    await this.assertCanAccess(file, user.id, user.role);
+    await this.assertCanEdit(file, user.id, user.role);
 
     await prisma.file.update({
       where: { id: fileId },
@@ -447,6 +447,18 @@ export class FilesService {
     });
     if (!share) {
       throw new ForbiddenError('You do not have access to this file');
+    }
+  }
+
+  private async assertCanEdit(file: File, userId: string, role: Role): Promise<void> {
+    if (file.userId === userId || role === 'ADMIN') {
+      return;
+    }
+    const share = await prisma.fileShare.findUnique({
+      where: { fileId_sharedWithId: { fileId: file.id, sharedWithId: userId } },
+    });
+    if (!share || share.permission !== 'EDIT') {
+      throw new ForbiddenError('You do not have permission to modify this file');
     }
   }
 }
