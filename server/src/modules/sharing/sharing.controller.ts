@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { SharingService } from './sharing.service';
 import type { ShareFileDto, UpdateShareDto } from './sharing.dto';
 import { getAuthUser } from '../../common/guards';

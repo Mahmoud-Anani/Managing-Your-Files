@@ -1,4 +1,4 @@
-import { Permission } from '@prisma/client';
+import type { Permission } from '@prisma/client';
 import { prisma } from '../../config/prisma';
 import { NotFoundError, ForbiddenError, ConflictError } from '../../common/errors';
 import type { ShareFileDto, UpdateShareDto } from './sharing.dto';

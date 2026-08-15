@@ -6,6 +6,8 @@
   "main": "dist/main.js",
   "scripts": {
     "start:dev": "ts-node-dev --respawn --transpile-only src/main.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "build": "tsc",
     "typecheck": "tsc -p tsconfig.check.json --noEmit",
     "start": "node dist/main.js",
@@ -49,6 +51,7 @@
     "@types/nodemailer": "^6.4.16",
     "@types/pdf-parse": "^1.1.4",
     "@types/pg": "^8.21.0",
+    "@types/supertest": "^7.2.1",
     "@types/swagger-ui-express": "^4.1.8",
     "@typescript-eslint/eslint-plugin": "^8.8.0",
     "@typescript-eslint/parser": "^8.8.0",
@@ -57,8 +60,10 @@
     "pg": "^8.23.0",
     "prettier": "^3.3.3",
     "prisma": "^5.22.0",
+    "supertest": "^7.2.2",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.6.2"
+    "typescript": "^5.6.2",
+    "vitest": "^4.1.10"
   }
 }

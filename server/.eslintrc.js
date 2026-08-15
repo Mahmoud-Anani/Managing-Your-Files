@@ -28,4 +28,19 @@ module.exports = {
     ],
     'no-console': ['warn', { allow: ['warn', 'error'] }],
   },
+  overrides: [
+    {
+      files: ['src/**/*.test.ts', 'src/test/**/*.ts'],
+      parserOptions: {
+        project: './tsconfig.check.json',
+      },
+      rules: {
+        '@typescript-eslint/explicit-function-return-type': 'off',
+        '@typescript-eslint/unbound-method': 'off',
+        '@typescript-eslint/no-unsafe-assignment': 'off',
+        '@typescript-eslint/no-misused-promises': 'off',
+        '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+      },
+    },
+  ],
 };

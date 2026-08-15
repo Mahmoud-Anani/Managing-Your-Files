@@ -15,44 +15,49 @@ function createPrismaClient(): PrismaClient {
    * Middleware to handle P1001 errors from Accelerate idle-timeout disconnects.
    * Accelerate can silently close idle connections, so we retry with exponential backoff.
    */
-  client.$use(async (params, next) => {
-    let lastError: unknown;
+  client.$use(
+    async (
+      params: Prisma.MiddlewareParams,
+      next: (params: Prisma.MiddlewareParams) => Promise<unknown>,
+    ): Promise<unknown> => {
+      let lastError: unknown;
 
-    for (let attempt = 1; attempt <= P1001_MAX_RETRIES; attempt++) {
-      try {
-        return await next(params);
-      } catch (error) {
-        lastError = error;
+      for (let attempt = 1; attempt <= P1001_MAX_RETRIES; attempt++) {
+        try {
+          return await next(params);
+        } catch (error) {
+          lastError = error;
 
-        // Only retry on P1001 errors (database unreachable)
-        if (
-          error instanceof Prisma.PrismaClientKnownRequestError &&
-          error.code === 'P1001'
-        ) {
-          // If this was the last retry attempt, rethrow
-          if (attempt === P1001_MAX_RETRIES) {
-            console.error(
-              `[Prisma] P1001 error persisted after ${P1001_MAX_RETRIES} retries, giving up…`,
+          // Only retry on P1001 errors (database unreachable)
+          if (
+            error instanceof Prisma.PrismaClientKnownRequestError &&
+            error.code === 'P1001'
+          ) {
+            // If this was the last retry attempt, rethrow
+            if (attempt === P1001_MAX_RETRIES) {
+              console.error(
+                `[Prisma] P1001 error persisted after ${P1001_MAX_RETRIES} retries, giving up…`,
+              );
+              throw error;
+            }
+
+            // Calculate exponential backoff delay
+            const delayMs = P1001_BASE_DELAY_MS * Math.pow(2, attempt - 1);
+            console.warn(
+              `[Prisma] P1001 (attempt ${attempt}/${P1001_MAX_RETRIES}) — retrying in ${delayMs}ms…`,
             );
+            await sleep(delayMs);
+          } else {
+            // Not a P1001 error, rethrow immediately
             throw error;
           }
-
-          // Calculate exponential backoff delay
-          const delayMs = P1001_BASE_DELAY_MS * Math.pow(2, attempt - 1);
-          console.warn(
-            `[Prisma] P1001 (attempt ${attempt}/${P1001_MAX_RETRIES}) — retrying in ${delayMs}ms…`,
-          );
-          await sleep(delayMs);
-        } else {
-          // Not a P1001 error, rethrow immediately
-          throw error;
         }
       }
-    }
 
-    // Should not reach here, but throw last error if we do
-    throw lastError;
-  });
+      // Should not reach here, but throw last error if we do
+      throw lastError;
+    },
+  );
 
   return client;
 }

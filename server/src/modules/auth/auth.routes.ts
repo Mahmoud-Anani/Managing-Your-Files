@@ -13,14 +13,11 @@ import {
   resetPasswordSchema,
   updateProfileSchema,
   verifyEmailSchema,
-  type ChangePasswordDto,
-  type DeleteAccountDto,
   type ForgotPasswordDto,
   type LoginDto,
   type RegisterDto,
   type ResendCodeDto,
   type ResetPasswordDto,
-  type UpdateProfileDto,
   type VerifyEmailDto,
 } from './auth.dto';
 import { resendRateLimit } from './auth.middleware';

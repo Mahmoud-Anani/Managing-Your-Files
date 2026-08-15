@@ -13,7 +13,7 @@ import {
 import { generateOtpCode, OTP_TTL_MS } from '../../common/otp';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../../common/email';
 import { toSafeUserDto, type SafeUserDto } from '../../common/user-mapper';
-import { uploadToCloudinary, deleteFromCloudinary, cloudinaryPublicId } from '../../common/cloudinary';
+import { uploadToCloudinary, deleteFromCloudinary } from '../../common/cloudinary';
 import { AuditService, type AuditContext } from '../audit/audit.service';
 import type {
   ChangePasswordDto,
