@@ -13,7 +13,7 @@ The repo is a monorepo with two applications:
 
 ## Features
 
-- **Email-verified accounts** — 6-digit OTP codes (10-minute expiry, 60-second resend cooldown) sent over SMTP; codes are logged to the console in development when SMTP is not configured.
+- **Email-verified accounts** — 6-digit OTP codes (10-minute expiry, 60-second resend cooldown) sent via the Resend API; codes are logged to the console in development when `RESEND_API_KEY` is not configured.
 - **Batch uploads** — up to 10 files per request; PNG, JPEG, GIF, WebP, BMP, PDF, TXT, Markdown, CSV, JSON and XML are accepted. Per-file size is configurable (`MAX_FILE_SIZE_MB`, default 25 MB).
 - **Text extraction** — PDFs and plain-text files get their text extracted (truncated to 100,000 chars) and shown in a preview on the file detail screen.
 - **File management** — paginated list with search-by-name, extension filter, and sorting by name, size or upload date; delete with confirmation.
@@ -33,7 +33,7 @@ The repo is a monorepo with two applications:
 - **JWT** bearer authentication (`jsonwebtoken`) with bcrypt password hashing (12 rounds).
 - **Zod** schemas used for runtime validation of request bodies and query strings.
 - **Multer** disk storage — files are renamed to a UUID before being written to cloudinary.
-- **Nodemailer** SMTP transport for verification emails.
+- **Resend** API for verification emails.
 - **pdf-parse** for PDF text extraction.
 - **Swagger UI Express** served from the spec in `server/src/docs/openapi.ts`.
 
@@ -118,9 +118,8 @@ The client runs at `http://localhost:3002`.
 | `ADMIN_EMAIL`               | no       | `admin@example.com`                          | Seed admin email                                                           |
 | `ADMIN_NAME`                | no       | `Admin`                                      | Seed admin name                                                            |
 | `ADMIN_PASSWORD`            | no       | `Admin123`                                   | Seed admin password (min 8 chars + a number)                               |
-| `GMAIL_USER` / `GMAIL_PASS` | no       | empty                                        | SMTP credentials; when empty, verification codes are logged to the console |
-| `SMTP_HOST` / `SMTP_PORT`   | no       | `smtp.gmail.com` / `587`                     | SMTP server                                                                |
-| `EMAIL_FROM`                | no       | `Managing Your Files <no-reply@example.com>` | Sender address                                                             |
+| `RESEND_API_KEY`           | no       | empty                                        | Resend API key; when empty, verification codes are logged to the console |
+| `EMAIL_FROM`               | no       | `Managing Your Files <onboarding@resend.dev>` | Verified sender address                                                    |
 | `MAX_FILE_SIZE_MB`          | no       | `25`                                         | Per-file upload limit (1–100 MB)                                           |
 
 > `DATABASE_URL` and `JWT_SECRET` are validated at boot — the server refuses to start without them.

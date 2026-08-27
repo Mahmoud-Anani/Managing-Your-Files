@@ -1,40 +1,7 @@
-import nodemailer from 'nodemailer';
-import type { Transporter } from 'nodemailer';
+import { Resend } from 'resend';
 import { env } from '../config/env';
 
-function createTransporter(): Transporter | null {
-  if (!env.GMAIL_USER || !env.GMAIL_PASS) {
-    console.error('GMAIL_USER or GMAIL_PASS is missing');
-    return null;
-  }
-
-  return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    requireTLS: true,
-
-    auth: {
-      user: env.GMAIL_USER,
-      pass: env.GMAIL_PASS,
-    },
-
-    connectionTimeout: 15_000,
-    greetingTimeout: 15_000,
-    socketTimeout: 30_000,
-  });
-}
-
-async function getVerifiedTransporter(): Promise<Transporter> {
-  const transporter = createTransporter();
-
-  if (!transporter) {
-    throw new Error('SMTP transporter is not configured');
-  }
-
-  await transporter.verify();
-  return transporter;
-}
+const resend = new Resend(env.RESEND_API_KEY || '');
 
 const BRAND = {
   primary: '#0e7c56',
@@ -386,14 +353,12 @@ export async function sendVerificationEmail(
 
   const html = wrapTemplate(content, `Your verification code is ${code}`);
 
-  if (!env.GMAIL_USER || !env.GMAIL_PASS) {
+  if (!env.RESEND_API_KEY) {
     console.warn(`[DEV EMAIL] Verification code for ${to}: ${code}`);
     return;
   }
 
-  const transporter = await getVerifiedTransporter();
-
-  await transporter.sendMail({
+  await resend.emails.send({
     from: env.EMAIL_FROM,
     to,
     subject,
@@ -570,14 +535,12 @@ export async function sendPasswordResetEmail(
 
   const html = wrapTemplate(content, `Your password reset code is ${code}`);
 
-  if (!env.GMAIL_USER || !env.GMAIL_PASS) {
+  if (!env.RESEND_API_KEY) {
     console.warn(`[DEV EMAIL] Password reset code for ${to}: ${code}`);
     return;
   }
 
-  const transporter = await getVerifiedTransporter();
-
-  await transporter.sendMail({
+  await resend.emails.send({
     from: env.EMAIL_FROM,
     to,
     subject,

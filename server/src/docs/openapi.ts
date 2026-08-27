@@ -61,7 +61,7 @@ export const openapi = {
     ].join('\n'),
     contact: {
       name: 'Managing Your Files',
-      email: env.GMAIL_USER || 'support@example.com',
+      email: env.ADMIN_EMAIL || 'support@example.com',
     },
     license: {
       name: 'MIT',
@@ -69,7 +69,9 @@ export const openapi = {
     },
   },
   servers: [
-    { url: `http://localhost:${env.PORT}`, description: 'Local development server' },
+    { url: env.NODE_ENV === 'development'
+          ? `http://localhost:${env.PORT}`
+          : env.BASE_URL, description: 'Local development server' },
   ],
   tags: [
     { name: 'Authentication', description: 'Register, verify, login, profile and settings' },
