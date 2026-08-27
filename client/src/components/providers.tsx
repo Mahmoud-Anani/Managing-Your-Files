@@ -7,6 +7,7 @@ import { ThemeProvider } from "@teispace/next-themes";
 import { ToastProvider } from "@/components/ui/toast";
 import { AuthProvider } from "@/contexts/auth-context";
 import { I18nProvider } from "@/contexts/i18n-provider";
+import { SocketProvider } from "@/lib/socket";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -29,15 +30,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
       enableSystem
       disableTransitionOnChange
     >
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <SocketProvider>
             <ToastProvider>
               <MotionConfig reducedMotion="user">
                 <I18nProvider>{children}</I18nProvider>
               </MotionConfig>
             </ToastProvider>
-          </AuthProvider>
-        </QueryClientProvider>
+          </SocketProvider>
+        </AuthProvider>
+      </QueryClientProvider>
     </ThemeProvider>
   );
 }

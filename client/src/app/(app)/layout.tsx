@@ -22,6 +22,7 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { useI18n } from "@/contexts/i18n-provider";
 import { useSidebarCollapsed } from "@/hooks/use-sidebar-collapsed";
+import { useSocketEvents } from "@/hooks/use-socket-events";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/layout/logo";
 import { PreferencesControls } from "@/components/preferences-controls";
@@ -52,6 +53,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
   const { collapsed, toggle } = useSidebarCollapsed();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const pathname = usePathname();
+  useSocketEvents();
 
   const navItems: NavItem[] = [
     { href: "/dashboard", label: t("nav.overview"), icon: LayoutDashboard },

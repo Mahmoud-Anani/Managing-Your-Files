@@ -2,6 +2,7 @@ import type { Permission } from '@prisma/client';
 import { prisma } from '../../config/prisma';
 import { NotFoundError, ForbiddenError, ConflictError } from '../../common/errors';
 import type { ShareFileDto, UpdateShareDto } from './sharing.dto';
+import { emitToUser } from '../../socket';
 
 export interface ShareResult {
   id: string;
@@ -68,6 +69,15 @@ export class SharingService {
       include: { sharedWith: { select: { id: true, name: true, email: true } } },
     });
 
+    const io = (globalThis as any).__socketServer;
+    if (io) {
+      emitToUser(io, sharedWithUser.id, 'share:created', {
+        fileId,
+        sharedBy: { id: sharedById },
+        permission: dto.permission,
+      });
+    }
+
     return share;
   }
 
@@ -103,6 +113,18 @@ export class SharingService {
     }
 
     await prisma.fileShare.delete({ where: { id: shareId } });
+
+    const io = (globalThis as any).__socketServer;
+    if (io) {
+      emitToUser(io, share.sharedWithId, 'share:removed', {
+        shareId,
+        fileId: share.fileId,
+      });
+      emitToUser(io, share.sharedById, 'share:removed', {
+        shareId,
+        fileId: share.fileId,
+      });
+    }
   }
 
   async getSharedByMe(userId: string): Promise<SharedFileResult[]> {

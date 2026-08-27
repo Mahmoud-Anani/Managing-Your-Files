@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
@@ -19,6 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { PasswordRequirements } from "@/components/password-requirements";
 
 type ResetPasswordFormValues = {
   email: string;
@@ -38,13 +39,15 @@ export default function ResetPasswordPage() {
       z
         .object({
           email: z.email(t("validation.invalidEmail")),
-          code: z
-            .string()
-            .regex(/^\d{6}$/, t("validation.codeRequired")),
+          code: z.string().regex(/^\d{6}$/, t("validation.codeRequired")),
           password: z
             .string()
             .min(8, t("validation.passwordLength"))
-            .regex(/\d/, t("validation.passwordNumber")),
+            .regex(/\d/, t("validation.passwordNumber"))
+            .regex(
+              /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/,
+              t("validation.passwordSpecial"),
+            ),
           confirmPassword: z.string(),
         })
         .refine((data) => data.password === data.confirmPassword, {
@@ -57,11 +60,14 @@ export default function ResetPasswordPage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: { email: "", code: "", password: "", confirmPassword: "" },
   });
+
+  const passwordValue = useWatch({ control, name: "password" });
 
   const onSubmit = async (values: ResetPasswordFormValues) => {
     setError(null);
@@ -151,6 +157,7 @@ export default function ResetPasswordPage() {
                   {errors.password.message}
                 </p>
               ) : null}
+              <PasswordRequirements password={passwordValue ?? ""} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">

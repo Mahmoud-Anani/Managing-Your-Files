@@ -324,7 +324,7 @@ function MobileMenu({
             animate={{ x: 0 }}
             exit={{ x: startX }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="absolute inset-y-0 start-0 flex w-72 max-w-[85%] flex-col bg-card shadow-xl"
+            className="absolute inset-y-0 inset-s-0 flex w-72 max-w-[85%] flex-col bg-card shadow-xl"
           >
             <div className="flex h-16 items-center justify-between border-b border-border px-4">
               <Logo />
@@ -338,7 +338,10 @@ function MobileMenu({
                 <X className="size-5" />
               </button>
             </div>
-            <nav aria-label={t("nav.primary")} className="flex-1 overflow-y-auto p-3">
+            <nav
+              aria-label={t("nav.primary")}
+              className="flex-1 overflow-y-auto p-3"
+            >
               {links.map((link) => (
                 <MobileNavLink
                   key={link.href}
@@ -384,10 +387,18 @@ function MobileMenu({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <Link href="/register" onClick={onNavigate} className={cn(linkButtonPrimary, "w-full")}>
+                  <Link
+                    href="/register"
+                    onClick={onNavigate}
+                    className={cn(linkButtonPrimary, "w-full")}
+                  >
                     {t("common.signUp")}
                   </Link>
-                  <Link href="/login" onClick={onNavigate} className={cn(linkButtonOutline, "w-full")}>
+                  <Link
+                    href="/login"
+                    onClick={onNavigate}
+                    className={cn(linkButtonOutline, "w-full")}
+                  >
                     {t("common.logIn")}
                   </Link>
                 </div>

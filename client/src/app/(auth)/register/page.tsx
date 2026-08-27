@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
@@ -19,6 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { PasswordRequirements } from "@/components/password-requirements";
 
 type RegisterFormValues = {
   name: string;
@@ -49,8 +50,17 @@ export default function RegisterPage() {
             .min(1, t("validation.nameRequired"))
             .max(100, t("validation.nameTooLong")),
           email: z.string().email(t("validation.invalidEmail")),
-          password: z.string().min(8, t("validation.passwordMin")),
-          confirmPassword: z.string().min(1, t("validation.confirmPasswordRequired")),
+          password: z
+            .string()
+            .min(8, t("validation.passwordMin"))
+            .regex(/\d/, t("validation.passwordNumber"))
+            .regex(
+              /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/,
+              t("validation.passwordSpecial"),
+            ),
+          confirmPassword: z
+            .string()
+            .min(1, t("validation.confirmPasswordRequired")),
         })
         .refine((values) => values.password === values.confirmPassword, {
           message: t("validation.passwordsMismatch"),
@@ -73,6 +83,11 @@ export default function RegisterPage() {
   const registerForm = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
+  });
+
+  const passwordValue = useWatch({
+    control: registerForm.control,
+    name: "password",
   });
 
   const verifyForm = useForm<VerifyFormValues>({
@@ -161,12 +176,17 @@ export default function RegisterPage() {
           {pendingEmail ? t("auth.verifyTitle") : t("auth.registerTitle")}
         </CardTitle>
         <CardDescription>
-          {pendingEmail ? t("auth.verifyDescription") : t("auth.registerDescription")}
+          {pendingEmail
+            ? t("auth.verifyDescription")
+            : t("auth.registerDescription")}
         </CardDescription>
       </CardHeader>
       <CardContent>
         {!pendingEmail ? (
-          <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
+          <form
+            onSubmit={registerForm.handleSubmit(onRegister)}
+            className="space-y-4"
+          >
             {error ? <Alert variant="error">{error}</Alert> : null}
             <div className="space-y-2">
               <Label htmlFor="name">{t("common.fullName")}</Label>
@@ -214,9 +234,12 @@ export default function RegisterPage() {
                   {registerForm.formState.errors.password.message}
                 </p>
               ) : null}
+              <PasswordRequirements password={passwordValue} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">{t("common.confirmPassword")}</Label>
+              <Label htmlFor="confirmPassword">
+                {t("common.confirmPassword")}
+              </Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -240,7 +263,10 @@ export default function RegisterPage() {
             </Button>
           </form>
         ) : (
-          <form onSubmit={verifyForm.handleSubmit(onVerify)} className="space-y-4">
+          <form
+            onSubmit={verifyForm.handleSubmit(onVerify)}
+            className="space-y-4"
+          >
             {info ? <Alert variant="success">{info}</Alert> : null}
             {error ? <Alert variant="error">{error}</Alert> : null}
             <div className="space-y-2">
@@ -260,7 +286,11 @@ export default function RegisterPage() {
                 </p>
               ) : null}
             </div>
-            <Button type="submit" className="w-full" loading={verifyForm.formState.isSubmitting}>
+            <Button
+              type="submit"
+              className="w-full"
+              loading={verifyForm.formState.isSubmitting}
+            >
               {t("common.verifyEmail")}
             </Button>
             <div className="text-center text-sm text-muted-foreground">
@@ -271,7 +301,9 @@ export default function RegisterPage() {
                 onClick={onResend}
                 disabled={resendDisabled}
               >
-                {resendDisabled ? t("auth.resendIn", { count: resendCountdown }) : t("common.resendCode")}
+                {resendDisabled
+                  ? t("auth.resendIn", { count: resendCountdown })
+                  : t("common.resendCode")}
               </button>
             </div>
           </form>
@@ -279,7 +311,10 @@ export default function RegisterPage() {
         {!pendingEmail ? (
           <p className="mt-4 text-center text-sm text-muted-foreground">
             {t("auth.alreadyHaveAccount")}{" "}
-            <Link href="/login" className="font-medium text-primary hover:underline">
+            <Link
+              href="/login"
+              className="font-medium text-primary hover:underline"
+            >
               {t("common.logIn")}
             </Link>
           </p>

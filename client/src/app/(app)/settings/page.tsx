@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
@@ -14,6 +14,7 @@ import { Alert } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { User, Lock, Trash2, Camera } from "lucide-react";
+import { PasswordRequirements } from "@/components/password-requirements";
 
 type ProfileFormValues = { name: string };
 type PasswordFormValues = {
@@ -63,8 +64,14 @@ export default function SettingsPage() {
       newPassword: z
         .string()
         .min(8, t("validation.passwordMin"))
-        .regex(/\d/, t("validation.passwordNumber")),
-      confirmPassword: z.string().min(1, t("validation.confirmPasswordRequired")),
+        .regex(/\d/, t("validation.passwordNumber"))
+        .regex(
+          /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/,
+          t("validation.passwordSpecial"),
+        ),
+      confirmPassword: z
+        .string()
+        .min(1, t("validation.confirmPasswordRequired")),
     })
     .refine((data) => data.newPassword === data.confirmPassword, {
       message: t("validation.passwordsMismatch"),
@@ -88,10 +95,15 @@ export default function SettingsPage() {
     register: registerPassword,
     handleSubmit: handleSubmitPassword,
     reset: resetPassword,
+    control: passwordControl,
     formState: { errors: passwordErrors, isSubmitting: isSubmittingPassword },
   } = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordSchema),
-    defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" },
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
   });
 
   const {
@@ -185,6 +197,11 @@ export default function SettingsPage() {
     }
   };
 
+  const newPasswordValue = useWatch({
+    control: passwordControl,
+    name: "newPassword",
+  });
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
@@ -205,10 +222,14 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent>
           {avatarSuccess ? (
-            <Alert variant="success" className="mb-4">{t("settings.avatarUpdated")}</Alert>
+            <Alert variant="success" className="mb-4">
+              {t("settings.avatarUpdated")}
+            </Alert>
           ) : null}
           {avatarError ? (
-            <Alert variant="error" className="mb-4">{avatarError}</Alert>
+            <Alert variant="error" className="mb-4">
+              {avatarError}
+            </Alert>
           ) : null}
           <div className="flex items-center gap-6">
             <span className="flex size-20 shrink-0 items-center justify-center rounded-full bg-primary text-2xl font-semibold text-primary-foreground">
@@ -254,11 +275,16 @@ export default function SettingsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmitProfile(onSubmitProfile)} className="space-y-4">
+          <form
+            onSubmit={handleSubmitProfile(onSubmitProfile)}
+            className="space-y-4"
+          >
             {profileSuccess ? (
               <Alert variant="success">{t("settings.profileUpdated")}</Alert>
             ) : null}
-            {profileError ? <Alert variant="error">{profileError}</Alert> : null}
+            {profileError ? (
+              <Alert variant="error">{profileError}</Alert>
+            ) : null}
             <div className="space-y-2">
               <Label htmlFor="name">{t("common.fullName")}</Label>
               <Input
@@ -269,13 +295,17 @@ export default function SettingsPage() {
                 {...registerProfile("name")}
               />
               {profileErrors.name ? (
-                <p className="text-sm text-destructive">{profileErrors.name.message}</p>
+                <p className="text-sm text-destructive">
+                  {profileErrors.name.message}
+                </p>
               ) : null}
             </div>
             <div className="space-y-2">
               <Label>{t("common.email")}</Label>
               <Input value={user?.email ?? ""} disabled />
-              <p className="text-xs text-muted-foreground">{t("settings.emailReadonly")}</p>
+              <p className="text-xs text-muted-foreground">
+                {t("settings.emailReadonly")}
+              </p>
             </div>
             <Button type="submit" loading={isSubmittingProfile}>
               {t("settings.saveProfile")}
@@ -292,13 +322,20 @@ export default function SettingsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmitPassword(onSubmitPassword)} className="space-y-4">
+          <form
+            onSubmit={handleSubmitPassword(onSubmitPassword)}
+            className="space-y-4"
+          >
             {passwordSuccess ? (
               <Alert variant="success">{t("settings.passwordChanged")}</Alert>
             ) : null}
-            {passwordError ? <Alert variant="error">{passwordError}</Alert> : null}
+            {passwordError ? (
+              <Alert variant="error">{passwordError}</Alert>
+            ) : null}
             <div className="space-y-2">
-              <Label htmlFor="currentPassword">{t("settings.currentPassword")}</Label>
+              <Label htmlFor="currentPassword">
+                {t("settings.currentPassword")}
+              </Label>
               <Input
                 id="currentPassword"
                 type="password"
@@ -307,7 +344,9 @@ export default function SettingsPage() {
                 {...registerPassword("currentPassword")}
               />
               {passwordErrors.currentPassword ? (
-                <p className="text-sm text-destructive">{passwordErrors.currentPassword.message}</p>
+                <p className="text-sm text-destructive">
+                  {passwordErrors.currentPassword.message}
+                </p>
               ) : null}
             </div>
             <div className="space-y-2">
@@ -320,11 +359,16 @@ export default function SettingsPage() {
                 {...registerPassword("newPassword")}
               />
               {passwordErrors.newPassword ? (
-                <p className="text-sm text-destructive">{passwordErrors.newPassword.message}</p>
+                <p className="text-sm text-destructive">
+                  {passwordErrors.newPassword.message}
+                </p>
               ) : null}
+              <PasswordRequirements password={newPasswordValue ?? ""} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">{t("common.confirmPassword")}</Label>
+              <Label htmlFor="confirmPassword">
+                {t("common.confirmPassword")}
+              </Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -333,7 +377,9 @@ export default function SettingsPage() {
                 {...registerPassword("confirmPassword")}
               />
               {passwordErrors.confirmPassword ? (
-                <p className="text-sm text-destructive">{passwordErrors.confirmPassword.message}</p>
+                <p className="text-sm text-destructive">
+                  {passwordErrors.confirmPassword.message}
+                </p>
               ) : null}
             </div>
             <Button type="submit" loading={isSubmittingPassword}>
@@ -351,7 +397,9 @@ export default function SettingsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="mb-4 text-sm text-muted-foreground">{t("settings.deleteDescription")}</p>
+          <p className="mb-4 text-sm text-muted-foreground">
+            {t("settings.deleteDescription")}
+          </p>
           <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
             {t("settings.deleteAccount")}
           </Button>
@@ -368,9 +416,14 @@ export default function SettingsPage() {
         className="max-w-md"
       >
         {deleteError ? (
-          <Alert variant="error" className="mb-4">{deleteError}</Alert>
+          <Alert variant="error" className="mb-4">
+            {deleteError}
+          </Alert>
         ) : null}
-        <form onSubmit={handleSubmitDelete(onSubmitDelete)} className="space-y-4">
+        <form
+          onSubmit={handleSubmitDelete(onSubmitDelete)}
+          className="space-y-4"
+        >
           <div className="space-y-2">
             <Label htmlFor="deletePassword">{t("common.password")}</Label>
             <Input
@@ -382,7 +435,9 @@ export default function SettingsPage() {
               {...registerDelete("password")}
             />
             {deleteErrors.password ? (
-              <p className="text-sm text-destructive">{deleteErrors.password.message}</p>
+              <p className="text-sm text-destructive">
+                {deleteErrors.password.message}
+              </p>
             ) : null}
           </div>
           <div className="flex justify-end gap-2">

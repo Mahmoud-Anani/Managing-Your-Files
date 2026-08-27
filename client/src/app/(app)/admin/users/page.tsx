@@ -6,7 +6,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Search, Trash2, Users } from "lucide-react";
 import { api, formatDate } from "@/lib/api";
 import { useUsers } from "@/hooks/use-queries";
-import type { ListUsersQuery, Role, SafeUserDto, SortOrder, UserSortBy } from "@/types";
+import type {
+  ListUsersQuery,
+  Role,
+  SafeUserDto,
+  SortOrder,
+  UserSortBy,
+} from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +32,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/auth-context";
+import { PasswordRequirements } from "@/components/password-requirements";
 
 const PAGE_SIZE = 10;
 
@@ -42,6 +49,13 @@ export default function AdminUsersPage() {
   const [sortBy, setSortBy] = useState<UserSortBy>("createdAt");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [deleteTarget, setDeleteTarget] = useState<SafeUserDto | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "USER" as Role,
+  });
 
   const query = useMemo<ListUsersQuery>(
     () => ({
@@ -70,7 +84,10 @@ export default function AdminUsersPage() {
       invalidate();
     },
     onError: (error: unknown) => {
-      toast(error instanceof Error ? error.message : t("admin.updateFailed"), "error");
+      toast(
+        error instanceof Error ? error.message : t("admin.updateFailed"),
+        "error",
+      );
     },
   });
 
@@ -83,7 +100,28 @@ export default function AdminUsersPage() {
       invalidate();
     },
     onError: (error: unknown) => {
-      toast(error instanceof Error ? error.message : t("admin.deleteFailed"), "error");
+      toast(
+        error instanceof Error ? error.message : t("admin.deleteFailed"),
+        "error",
+      );
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (payload: typeof createForm) => {
+      await api.post("/users", payload);
+    },
+    onSuccess: () => {
+      toast("User created.", "success");
+      setCreateOpen(false);
+      setCreateForm({ name: "", email: "", password: "", role: "USER" });
+      invalidate();
+    },
+    onError: (error: unknown) => {
+      toast(
+        error instanceof Error ? error.message : t("admin.updateFailed"),
+        "error",
+      );
     },
   });
 
@@ -104,18 +142,106 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t("admin.usersTitle")}</h1>
-        <p className="text-sm text-muted-foreground">
-          {t("admin.usersSubtitle")}
-        </p>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {t("admin.usersTitle")}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {t("admin.usersSubtitle")}
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => setCreateOpen((current) => !current)}
+        >
+          Add user
+        </Button>
       </div>
+
+      {createOpen ? (
+        <Card>
+          <CardContent className="space-y-4 p-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Name</label>
+                <Input
+                  value={createForm.name}
+                  onChange={(event) =>
+                    setCreateForm((current) => ({
+                      ...current,
+                      name: event.target.value,
+                    }))
+                  }
+                  placeholder="Jane Doe"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Email</label>
+                <Input
+                  type="email"
+                  value={createForm.email}
+                  onChange={(event) =>
+                    setCreateForm((current) => ({
+                      ...current,
+                      email: event.target.value,
+                    }))
+                  }
+                  placeholder="user@example.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Password</label>
+                <Input
+                  type="password"
+                  value={createForm.password}
+                  onChange={(event) =>
+                    setCreateForm((current) => ({
+                      ...current,
+                      password: event.target.value,
+                    }))
+                  }
+                  placeholder="At least 8 chars"
+                />
+                <PasswordRequirements password={createForm.password} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Role</label>
+                <select
+                  value={createForm.role}
+                  onChange={(event) =>
+                    setCreateForm((current) => ({
+                      ...current,
+                      role: event.target.value as Role,
+                    }))
+                  }
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="USER">USER</option>
+                  <option value="ADMIN">ADMIN</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setCreateOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => createMutation.mutate(createForm)}
+                disabled={createMutation.isPending}
+              >
+                Create user
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card>
         <CardContent className="p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="relative flex-1">
-              <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="pointer-events-none absolute inset-s-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
@@ -220,9 +346,13 @@ export default function AdminUsersPage() {
                           <TableCell>{user.email}</TableCell>
                           <TableCell>
                             {user.isVerified ? (
-                              <Badge variant="success">{t("admin.verified")}</Badge>
+                              <Badge variant="success">
+                                {t("admin.verified")}
+                              </Badge>
                             ) : (
-                              <Badge variant="outline">{t("admin.unverified")}</Badge>
+                              <Badge variant="outline">
+                                {t("admin.unverified")}
+                              </Badge>
                             )}
                           </TableCell>
                           <TableCell>
@@ -248,7 +378,9 @@ export default function AdminUsersPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              aria-label={t("files.deleteLabel", { name: user.name })}
+                              aria-label={t("files.deleteLabel", {
+                                name: user.name,
+                              })}
                               disabled={isSelf}
                               onClick={() => setDeleteTarget(user)}
                             >
@@ -293,6 +425,161 @@ export default function AdminUsersPage() {
           }
         }}
       />
+
+      {/* <Card className="mt-4">
+        <CardContent>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    applySearch();
+                  }
+                }}
+                placeholder={t("admin.searchPlaceholder")}
+                className="ps-9"
+              />
+            </div>
+            <div className="flex items-center gap-1">
+              {(["", "USER", "ADMIN"] as const).map((value) => (
+                <Button
+                  key={value}
+                  variant={roleFilter === value ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={() => {
+                    setRoleFilter(value);
+                    setPage(1);
+                  }}
+                >
+                  {value === "" ? t("admin.all") : value}
+                </Button>
+              ))}
+            </div>
+            <Button variant="outline" onClick={applySearch}>
+              {t("common.search")}
+            </Button>
+          </div>
+
+          <div className="mt-4">
+            {isLoading ? (
+              <div className="space-y-2">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <Skeleton key={index} className="h-12 w-full" />
+                ))}
+              </div>
+            ) : !data || data.data.length === 0 ? (
+              <EmptyState
+                icon={<Users className="size-6" />}
+                title={t("admin.noUsersFound")}
+                description={t("files.adjustFilters")}
+              />
+            ) : (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <SortableHead
+                        label={t("files.name")}
+                        active={sortBy === "name"}
+                        order={sortOrder}
+                        onClick={() => toggleSort("name")}
+                      />
+                      <SortableHead
+                        label={t("common.email")}
+                        active={sortBy === "email"}
+                        order={sortOrder}
+                        onClick={() => toggleSort("email")}
+                      />
+                      <TableHead>{t("admin.status")}</TableHead>
+                      <TableHead>{t("admin.role")}</TableHead>
+                      <SortableHead
+                        label={t("admin.joined")}
+                        active={sortBy === "createdAt"}
+                        order={sortOrder}
+                        onClick={() => toggleSort("createdAt")}
+                      />
+                      <TableHead className="text-right">
+                        {t("files.actions")}
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.data.map((user) => {
+                      const isSelf = user.id === currentUser?.id;
+                      return (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-medium">
+                            {user.name}
+                            {isSelf ? (
+                              <Badge variant="secondary" className="ms-2">
+                                {t("admin.you")}
+                              </Badge>
+                            ) : null}
+                          </TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>
+                            {user.isVerified ? (
+                              <Badge variant="success">
+                                {t("admin.verified")}
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline">
+                                {t("admin.unverified")}
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <select
+                              value={user.role}
+                              disabled={isSelf || roleMutation.isPending}
+                              onChange={(event) =>
+                                roleMutation.mutate({
+                                  id: user.id,
+                                  role: event.target.value as Role,
+                                })
+                              }
+                              className="h-8 rounded-md border border-input bg-background px-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <option value="USER">USER</option>
+                              <option value="ADMIN">ADMIN</option>
+                            </select>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap text-muted-foreground">
+                            {formatDate(user.createdAt)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label={t("files.deleteLabel", {
+                                name: user.name,
+                              })}
+                              disabled={isSelf}
+                              onClick={() => setDeleteTarget(user)}
+                            >
+                              <Trash2 className="size-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+                <Pagination
+                  className="mt-4"
+                  page={data.pagination.page}
+                  totalPages={data.pagination.totalPages}
+                  total={data.pagination.total}
+                  onPageChange={setPage}
+                />
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card> */}
     </div>
   );
 }

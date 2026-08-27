@@ -1,5 +1,22 @@
 import { z } from 'zod';
 
+const passwordRegex =
+  /^(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,72}$/;
+
+const passwordSchema = z
+  .string()
+  .min(8, 'Password must be at least 8 characters')
+  .max(72, 'Password must be at most 72 characters')
+  .regex(/\d/, 'Password must contain at least one number')
+  .regex(
+    /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/,
+    'Password must contain at least one special character',
+  )
+  .regex(
+    passwordRegex,
+    'Password must contain at least one number and one special character',
+  );
+
 export const registerSchema = z.object({
   name: z
     .string()
@@ -7,11 +24,7 @@ export const registerSchema = z.object({
     .min(2, 'Name must be at least 2 characters')
     .max(100, 'Name must be at most 100 characters'),
   email: z.string().trim().toLowerCase().email('Invalid email address'),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .max(72, 'Password must be at most 72 characters')
-    .regex(/\d/, 'Password must contain at least one number'),
+  password: passwordSchema,
 });
 
 export type RegisterDto = z.infer<typeof registerSchema>;
@@ -46,11 +59,7 @@ export const resetPasswordSchema = z
   .object({
     email: z.string().trim().toLowerCase().email('Invalid email address'),
     code: z.string().regex(/^\d{6}$/, 'Code must be exactly 6 digits'),
-    password: z
-      .string()
-      .min(8, 'Password must be at least 8 characters')
-      .max(72, 'Password must be at most 72 characters')
-      .regex(/\d/, 'Password must contain at least one number'),
+    password: passwordSchema,
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -73,11 +82,7 @@ export type UpdateProfileDto = z.infer<typeof updateProfileSchema>;
 export const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1, 'Current password is required'),
-    newPassword: z
-      .string()
-      .min(8, 'Password must be at least 8 characters')
-      .max(72, 'Password must be at most 72 characters')
-      .regex(/\d/, 'Password must contain at least one number'),
+    newPassword: passwordSchema,
     confirmPassword: z.string(),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {

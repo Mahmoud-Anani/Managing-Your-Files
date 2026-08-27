@@ -6,7 +6,9 @@ import type { PaginatedResult } from '../../common/pagination';
 import { UsersService } from './users.service';
 import type { AuditContext } from '../audit/audit.service';
 import type {
+  CreateUserDto,
   ListUsersQueryDto,
+  UpdateUserDto,
   UpdateUserRoleDto,
 } from './users.dto';
 
@@ -23,6 +25,33 @@ export class UsersController {
   async list(req: Request, res: Response): Promise<void> {
     const query = req.query as unknown as ListUsersQueryDto;
     const result: PaginatedResult<SafeUserDto> = await usersService.list(query);
+    res.json(result);
+  }
+
+  async create(req: Request, res: Response): Promise<void> {
+    const actor = getAuthUser(req);
+    const body = req.body as CreateUserDto;
+    const result = await usersService.createUser(
+      actor,
+      body,
+      auditContextFrom(req),
+    );
+    res.status(201).json(result);
+  }
+
+  async update(req: Request, res: Response): Promise<void> {
+    const actor = getAuthUser(req);
+    const id = req.params.id;
+    if (!id) {
+      throw new ValidationError('User id is required');
+    }
+    const body = req.body as UpdateUserDto;
+    const result = await usersService.updateUser(
+      actor,
+      id,
+      body,
+      auditContextFrom(req),
+    );
     res.json(result);
   }
 
@@ -48,7 +77,11 @@ export class UsersController {
     if (!id) {
       throw new ValidationError('User id is required');
     }
-    const result = await usersService.deleteUser(actor, id, auditContextFrom(req));
+    const result = await usersService.deleteUser(
+      actor,
+      id,
+      auditContextFrom(req),
+    );
     res.json(result);
   }
 }

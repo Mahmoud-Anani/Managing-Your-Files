@@ -11,9 +11,15 @@ import {
   ValidationError,
 } from '../../common/errors';
 import { generateOtpCode, OTP_TTL_MS } from '../../common/otp';
-import { sendVerificationEmail, sendPasswordResetEmail } from '../../common/email';
+import {
+  sendVerificationEmail,
+  sendPasswordResetEmail,
+} from '../../common/email';
 import { toSafeUserDto, type SafeUserDto } from '../../common/user-mapper';
-import { uploadToCloudinary, deleteFromCloudinary } from '../../common/cloudinary';
+import {
+  uploadToCloudinary,
+  deleteFromCloudinary,
+} from '../../common/cloudinary';
 import { AuditService, type AuditContext } from '../audit/audit.service';
 import type {
   ChangePasswordDto,
@@ -43,9 +49,34 @@ interface AccessTokenPayload {
   role: string;
 }
 
-const ACCESS_TOKEN_EXPIRY = '15m';
-const REFRESH_TOKEN_EXPIRY = '7d';
-const REFRESH_TOKEN_DAYS = 7;
+const ACCESS_TOKEN_EXPIRY = env.JWT_EXPIRES_IN;
+const REFRESH_TOKEN_EXPIRY = env.JWT_REFRESH_EXPIRES_IN;
+const REFRESH_TOKEN_MS = (() => {
+  const match = /^(?:(\d+)d|(?:(\d+)h)|(?:(\d+)m)|(?:(\d+)s))$/i.exec(
+    REFRESH_TOKEN_EXPIRY,
+  );
+
+  if (!match) {
+    return 7 * 24 * 60 * 60 * 1000;
+  }
+
+  const [, days, hours, minutes, seconds] = match;
+  if (days) {
+    return Number(days) * 24 * 60 * 60 * 1000;
+  }
+  if (hours) {
+    return Number(hours) * 60 * 60 * 1000;
+  }
+  if (minutes) {
+    return Number(minutes) * 60 * 1000;
+  }
+  return Number(seconds) * 1000;
+})();
+
+const REFRESH_TOKEN_DAYS = Math.max(
+  1,
+  Math.ceil(REFRESH_TOKEN_MS / (24 * 60 * 60 * 1000)),
+);
 
 export const COOKIE_OPTIONS = {
   httpOnly: true,
@@ -62,12 +93,33 @@ export function setTokenCookies(
 ): void {
   res.cookie('access_token', accessToken, {
     ...COOKIE_OPTIONS,
-    maxAge: 15 * 60 * 1000, // 15 minutes
+    maxAge: (() => {
+      const match = /^(\d+)([smhdw])$/i.exec(env.JWT_EXPIRES_IN);
+      if (!match) {
+        return 15 * 60 * 1000;
+      }
+      const value = Number(match[1]);
+      const unit = (match[2] ?? 'm').toLowerCase();
+      switch (unit) {
+        case 's':
+          return value * 1000;
+        case 'm':
+          return value * 60 * 1000;
+        case 'h':
+          return value * 60 * 60 * 1000;
+        case 'd':
+          return value * 24 * 60 * 60 * 1000;
+        case 'w':
+          return value * 7 * 24 * 60 * 60 * 1000;
+        default:
+          return 15 * 60 * 1000;
+      }
+    })(),
   });
 
   res.cookie('refresh_token', refreshToken, {
     ...COOKIE_OPTIONS,
-    maxAge: REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000, // 7 days
+    maxAge: REFRESH_TOKEN_MS,
   });
 }
 
@@ -178,9 +230,7 @@ export class AuthService {
       throw new UnauthorizedError('Invalid email or password');
     }
     if (!user.isVerified) {
-      throw new ValidationError(
-        'Please verify your email before logging in',
-      );
+      throw new ValidationError('Please verify your email before logging in');
     }
 
     const accessToken = this.signAccessToken(user);
@@ -200,10 +250,7 @@ export class AuthService {
     return { user: toSafeUserDto(user) };
   }
 
-  async refresh(
-    res: Response,
-    refreshToken: string,
-  ): Promise<AuthResponse> {
+  async refresh(res: Response, refreshToken: string): Promise<AuthResponse> {
     try {
       jwt.verify(refreshToken, env.JWT_REFRESH_SECRET);
     } catch {
@@ -275,7 +322,9 @@ export class AuthService {
 
     if (user.avatar) {
       const parts = user.avatar.split('/');
-      const publicIdWithExt = parts.slice(parts.indexOf('upload') + 1).join('/');
+      const publicIdWithExt = parts
+        .slice(parts.indexOf('upload') + 1)
+        .join('/');
       const publicId = publicIdWithExt.replace(/\.[^.]+$/, '');
       try {
         await deleteFromCloudinary(publicId, 'image');
@@ -357,9 +406,7 @@ export class AuthService {
     return { message: 'Account deleted successfully' };
   }
 
-  async forgotPassword(
-    dto: ForgotPasswordDto,
-  ): Promise<{ message: string }> {
+  async forgotPassword(dto: ForgotPasswordDto): Promise<{ message: string }> {
     const user = await prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -384,9 +431,7 @@ export class AuthService {
     return { message: 'If an account exists, a reset code has been sent' };
   }
 
-  async resetPassword(
-    dto: ResetPasswordDto,
-  ): Promise<{ message: string }> {
+  async resetPassword(dto: ResetPasswordDto): Promise<{ message: string }> {
     const user = await prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -424,18 +469,24 @@ export class AuthService {
       userId: user.id,
       role: user.role,
     };
-    return jwt.sign(payload, env.JWT_SECRET, {
-      expiresIn: ACCESS_TOKEN_EXPIRY,
-    });
+    const signOptions: jwt.SignOptions = {
+      expiresIn: ACCESS_TOKEN_EXPIRY as jwt.SignOptions['expiresIn'],
+    };
+    return jwt.sign(payload, env.JWT_SECRET, signOptions);
   }
 
   private async createRefreshToken(userId: string): Promise<string> {
-    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(
+      Date.now() + REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000,
+    );
+    const signOptions: jwt.SignOptions = {
+      expiresIn: REFRESH_TOKEN_EXPIRY as jwt.SignOptions['expiresIn'],
+    };
 
     const token = jwt.sign(
       { userId, tokenVersion: Date.now() },
       env.JWT_REFRESH_SECRET,
-      { expiresIn: REFRESH_TOKEN_EXPIRY },
+      signOptions,
     );
 
     await prisma.refreshToken.create({

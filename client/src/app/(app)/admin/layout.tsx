@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { BarChart3, ScrollText, Users } from "lucide-react";
+import { BarChart3, FileStack, ScrollText, Users } from "lucide-react";
 import { AdminRoute } from "@/components/guards/admin-route";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +25,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 
   const adminLinks = [
     { href: "/admin", label: t("nav.overview"), icon: BarChart3 },
+    { href: "/admin/files", label: t("nav.files"), icon: FileStack },
     { href: "/admin/users", label: t("nav.users"), icon: Users },
     { href: "/admin/audit", label: t("nav.auditLogs"), icon: ScrollText },
   ];

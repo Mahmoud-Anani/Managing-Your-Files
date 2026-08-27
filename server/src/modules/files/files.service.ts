@@ -17,10 +17,8 @@ import {
 } from './file-mapper';
 import { extractText } from './text-extractor';
 import { AuditService, type AuditContext } from '../audit/audit.service';
-import type {
-  AdminListFilesQueryDto,
-  ListFilesQueryDto,
-} from './files.dto';
+import type { AdminListFilesQueryDto, ListFilesQueryDto } from './files.dto';
+import { emitToUser, emitToAdmins } from '../../socket';
 
 const auditService = new AuditService();
 
@@ -42,17 +40,17 @@ async function removeStoredFile(
   mimeType: string,
 ): Promise<void> {
   try {
-    await deleteFromCloudinary(
-      storedName,
-      cloudinaryResourceType(mimeType),
-    );
+    await deleteFromCloudinary(storedName, cloudinaryResourceType(mimeType));
   } catch {
     // The Cloudinary asset may already be missing; the database record is
     // the source of truth for the delete operation.
   }
 }
 
-async function findFile(fileId: string, includeDeleted: boolean): Promise<File> {
+async function findFile(
+  fileId: string,
+  includeDeleted: boolean,
+): Promise<File> {
   const file = await prisma.file.findFirst({
     where: includeDeleted ? { id: fileId } : { id: fileId, deletedAt: null },
   });
@@ -71,11 +69,12 @@ export class FilesService {
     const records: File[] = [];
 
     for (const file of files) {
-      const extension = file.originalname
-        .split('.')
-        .pop()
-        ?.toLowerCase()
-        .replace(/[^a-z0-9]/g, '') ?? '';
+      const extension =
+        file.originalname
+          .split('.')
+          .pop()
+          ?.toLowerCase()
+          .replace(/[^a-z0-9]/g, '') ?? '';
       const mimeType = normalizeMimeType(file.originalname, file.mimetype);
       const extractedText = await extractText({
         buffer: file.buffer,
@@ -114,6 +113,18 @@ export class FilesService {
         metadata: { name: record.originalName, size: record.size },
         ctx,
       });
+    }
+
+    if (records.length > 0) {
+      const io = (globalThis as any).__socketServer;
+      if (io) {
+        emitToUser(io, user.id, 'file:uploaded', {
+          files: records.map(toSafeFileDto),
+        });
+        emitToAdmins(io, 'admin:file:uploaded', {
+          files: records.map(toSafeFileDto),
+        });
+      }
     }
 
     return records.map(toSafeFileDto);
@@ -247,6 +258,15 @@ export class FilesService {
       ctx,
     });
 
+    const io = (globalThis as any).__socketServer;
+    if (io) {
+      emitToUser(io, file.userId, 'file:deleted', { fileId: file.id });
+      emitToAdmins(io, 'admin:file:deleted', {
+        fileId: file.id,
+        ownerId: file.userId,
+      });
+    }
+
     return { message: 'File moved to trash' };
   }
 
@@ -275,7 +295,17 @@ export class FilesService {
       ctx,
     });
 
-    return toSafeFileDto(restored);
+    const dto = toSafeFileDto(restored);
+    const io = (globalThis as any).__socketServer;
+    if (io) {
+      emitToUser(io, file.userId, 'file:restored', { file: dto });
+      emitToAdmins(io, 'admin:file:restored', {
+        file: dto,
+        ownerId: file.userId,
+      });
+    }
+
+    return dto;
   }
 
   async purge(
@@ -300,6 +330,15 @@ export class FilesService {
       metadata: { name: file.originalName },
       ctx,
     });
+
+    const io = (globalThis as any).__socketServer;
+    if (io) {
+      emitToUser(io, file.userId, 'file:purged', { fileId: file.id });
+      emitToAdmins(io, 'admin:file:purged', {
+        fileId: file.id,
+        ownerId: file.userId,
+      });
+    }
 
     return { message: 'File permanently deleted' };
   }
@@ -383,6 +422,15 @@ export class FilesService {
       ctx,
     });
 
+    const io = (globalThis as any).__socketServer;
+    if (io) {
+      emitToUser(io, file.userId, 'file:deleted', { fileId: file.id });
+      emitToAdmins(io, 'admin:file:deleted', {
+        fileId: file.id,
+        ownerId: file.userId,
+      });
+    }
+
     return { message: 'File moved to trash' };
   }
 
@@ -410,7 +458,17 @@ export class FilesService {
       ctx,
     });
 
-    return toSafeFileDto(restored);
+    const dto = toSafeFileDto(restored);
+    const io = (globalThis as any).__socketServer;
+    if (io) {
+      emitToUser(io, file.userId, 'file:restored', { file: dto });
+      emitToAdmins(io, 'admin:file:restored', {
+        file: dto,
+        ownerId: file.userId,
+      });
+    }
+
+    return dto;
   }
 
   async adminPurge(
@@ -435,10 +493,23 @@ export class FilesService {
       ctx,
     });
 
+    const io = (globalThis as any).__socketServer;
+    if (io) {
+      emitToUser(io, file.userId, 'file:purged', { fileId: file.id });
+      emitToAdmins(io, 'admin:file:purged', {
+        fileId: file.id,
+        ownerId: file.userId,
+      });
+    }
+
     return { message: 'File permanently deleted' };
   }
 
-  private async assertCanAccess(file: File, userId: string, role: Role): Promise<void> {
+  private async assertCanAccess(
+    file: File,
+    userId: string,
+    role: Role,
+  ): Promise<void> {
     if (file.userId === userId || role === 'ADMIN') {
       return;
     }
@@ -450,7 +521,11 @@ export class FilesService {
     }
   }
 
-  private async assertCanEdit(file: File, userId: string, role: Role): Promise<void> {
+  private async assertCanEdit(
+    file: File,
+    userId: string,
+    role: Role,
+  ): Promise<void> {
     if (file.userId === userId || role === 'ADMIN') {
       return;
     }
@@ -458,7 +533,9 @@ export class FilesService {
       where: { fileId_sharedWithId: { fileId: file.id, sharedWithId: userId } },
     });
     if (!share || share.permission !== 'EDIT') {
-      throw new ForbiddenError('You do not have permission to modify this file');
+      throw new ForbiddenError(
+        'You do not have permission to modify this file',
+      );
     }
   }
 }

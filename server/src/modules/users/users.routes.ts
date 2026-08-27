@@ -1,15 +1,29 @@
 import { Router } from 'express';
 import { Role } from '@prisma/client';
-import { asyncHandler, validateBody, validateQuery } from '../../common/async-handler';
+import {
+  asyncHandler,
+  validateBody,
+  validateQuery,
+} from '../../common/async-handler';
 import { authGuard, roleGuard } from '../../common/guards';
 import { UsersController } from './users.controller';
 import {
+  createUserSchema,
   listUsersQuerySchema,
+  updateUserSchema,
   updateUserRoleSchema,
 } from './users.dto';
 
 const router = Router();
 const controller = new UsersController();
+
+router.post(
+  '/',
+  authGuard,
+  roleGuard(Role.ADMIN),
+  validateBody(createUserSchema),
+  asyncHandler((req, res) => controller.create(req, res)),
+);
 
 router.get(
   '/',
@@ -21,6 +35,14 @@ router.get(
 
 router.patch(
   '/:id',
+  authGuard,
+  roleGuard(Role.ADMIN),
+  validateBody(updateUserSchema),
+  asyncHandler((req, res) => controller.update(req, res)),
+);
+
+router.patch(
+  '/:id/role',
   authGuard,
   roleGuard(Role.ADMIN),
   validateBody(updateUserRoleSchema),

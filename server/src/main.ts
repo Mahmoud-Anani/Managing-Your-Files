@@ -2,6 +2,7 @@ import 'dotenv/config';
 import cors from 'cors';
 import express from 'express';
 import cookieParser from 'cookie-parser';
+import http from 'http';
 import { env } from './config/env';
 import { prisma, connectWithRetry } from './config/prisma';
 import { errorHandler } from './common/error-handler';
@@ -14,6 +15,7 @@ import auditRoutes from './modules/audit/audit.routes';
 import statsRoutes from './modules/stats/stats.routes';
 import sharingRoutes from './modules/sharing/sharing.routes';
 import { swaggerRouter } from './docs/swagger.routes';
+import { createSocketServer } from './socket';
 
 const app = express();
 
@@ -47,12 +49,17 @@ app.use('/api/v1', apiRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-let server: ReturnType<typeof app.listen> | undefined;
+const httpServer = http.createServer(app);
+const io = createSocketServer(httpServer);
+(globalThis as { __socketServer?: typeof io }).__socketServer = io;
+app.set('io', io);
+
+let server: ReturnType<typeof httpServer.listen> | undefined;
 
 async function start(): Promise<void> {
   try {
     await connectWithRetry();
-    server = app.listen(env.PORT, () => {
+    server = httpServer.listen(env.PORT, () => {
       const base = `http://localhost:${env.PORT}`;
       console.warn(`[Server] Running on ${env.NODE_ENV} mode`);
       console.warn(`[Server] Running on ${base}`);
