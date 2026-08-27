@@ -62,7 +62,7 @@ async function start(): Promise<void> {
     server = httpServer.listen(env.PORT, () => {
       const base =
         env.NODE_ENV === 'development'
-          ?  `http://localhost:${env.PORT}`
+          ? `http://localhost:${env.PORT}`
           : env.BASE_URL;
       console.warn(`[Server] Running on ${env.NODE_ENV} mode`);
       console.warn(`[Server] Running on ${base}`);
