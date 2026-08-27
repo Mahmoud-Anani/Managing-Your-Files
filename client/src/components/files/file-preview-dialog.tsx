@@ -14,9 +14,12 @@ import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import {
   fetchFileBlob,
+  isAudioMime,
   isImageMime,
+  isOfficeMime,
   isPdfMime,
   isTextPreviewable,
+  isVideoMime,
 } from "@/lib/api";
 import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -57,17 +60,31 @@ export function FilePreviewDialog({
   const [fitWidth, setFitWidth] = useState<number>(800);
   const detail = useFile(file?.id ?? "", { enabled: Boolean(file && open) });
 
-  const canStream = file
-    ? isImageMime(file.mimeType) ||
-      isPdfMime(file.mimeType) ||
-      isTextPreviewable(file.mimeType, file.extension)
-    : false;
+  const isPdf = Boolean(file && isPdfMime(file.mimeType));
+  const isVideo = Boolean(file && isVideoMime(file.mimeType));
+  const isAudio = Boolean(file && isAudioMime(file.mimeType));
+  const isTextRendered = Boolean(
+    file &&
+      (isTextPreviewable(file.mimeType, file.extension) ||
+        isOfficeMime(file.mimeType, file.extension)),
+  );
+
+  const canStream = Boolean(
+    file &&
+      (isImageMime(file.mimeType) ||
+        isPdfMime(file.mimeType) ||
+        isVideoMime(file.mimeType) ||
+        isAudioMime(file.mimeType) ||
+        isTextPreviewable(file.mimeType, file.extension) ||
+        isOfficeMime(file.mimeType, file.extension)),
+  );
 
   const previewUrl = file && isPdfMime(file.mimeType) ? file.url : objectUrl;
 
-  const hasPreviewUrl =
-    file && isPdfMime(file.mimeType)
-      ? Boolean(file.url) && workerReady
+  const hasPreviewUrl = isPdf
+    ? Boolean(file?.url) && workerReady
+    : isTextRendered
+      ? Boolean(detail.data)
       : Boolean(objectUrl);
 
   useEffect(() => {
@@ -95,6 +112,18 @@ export function FilePreviewDialog({
         setLoadError(false);
         setNumPages(null);
         setWorkerReady(false);
+      };
+    }
+
+    // Text-rendered files (plain text and server-extracted office documents)
+    // render from the detail response; no preview blob is needed.
+    if (
+      isTextPreviewable(file.mimeType, file.extension) ||
+      isOfficeMime(file.mimeType, file.extension)
+    ) {
+      return () => {
+        cancelled = true;
+        setLoadError(false);
       };
     }
 
@@ -151,7 +180,6 @@ export function FilePreviewDialog({
   const resetZoom = useCallback(() => setScale(1), []);
 
   const close = () => onOpenChange(false);
-  const isPdf = Boolean(file && isPdfMime(file.mimeType));
   const pageWidth = fitWidth * scale;
 
   return (
@@ -250,6 +278,22 @@ export function FilePreviewDialog({
                       ))}
                   </Document>
                 </div>
+              ) : isVideo ? (
+                <video
+                  src={objectUrl ?? ""}
+                  controls
+                  className="max-h-[58vh] max-w-full rounded"
+                >
+                  {t("files.previewUnsupported")}
+                </video>
+              ) : isAudio ? (
+                <audio
+                  src={objectUrl ?? ""}
+                  controls
+                  className="w-full max-w-2xl"
+                >
+                  {t("files.previewUnsupported")}
+                </audio>
               ) : (
                 <pre className="max-h-[58vh] w-full overflow-y-auto whitespace-pre-wrap rounded p-4 font-mono text-xs leading-relaxed">
                   {detail.data?.extractedText ?? ""}

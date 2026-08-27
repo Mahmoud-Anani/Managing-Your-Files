@@ -178,9 +178,50 @@ export function isPdfMime(mimeType: string): boolean {
   return mimeType === "application/pdf";
 }
 
+const OFFICE_EXTENSIONS = [
+  "doc",
+  "docx",
+  "xls",
+  "xlsx",
+  "ppt",
+  "pptx",
+  "odt",
+  "ods",
+  "odp",
+  "rtf",
+];
+
+const OFFICE_MIME_PREFIXES = [
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml",
+  "application/vnd.oasis.opendocument",
+  "application/rtf",
+];
+
 export function isTextPreviewable(mimeType: string, extension: string): boolean {
   return (
     mimeType.startsWith("text/") ||
     ["json", "xml", "log", "csv", "md"].includes(extension.toLowerCase())
   );
+}
+
+/** Office documents are parsed server-side; their extracted text is previewed client-side. */
+export function isOfficeMime(mimeType: string, extension: string): boolean {
+  const ext = extension.toLowerCase();
+  return (
+    OFFICE_MIME_PREFIXES.some((prefix) => mimeType.startsWith(prefix)) ||
+    OFFICE_EXTENSIONS.includes(ext)
+  );
+}
+
+export function isVideoMime(mimeType: string): boolean {
+  return mimeType.startsWith("video/");
+}
+
+export function isAudioMime(mimeType: string): boolean {
+  return mimeType.startsWith("audio/");
 }

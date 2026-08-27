@@ -15,7 +15,7 @@ The repo is a monorepo with two applications:
 
 - **Email-verified accounts** — 6-digit OTP codes (10-minute expiry, 60-second resend cooldown) sent via the Resend API; codes are logged to the console in development when `RESEND_API_KEY` is not configured.
 - **Batch uploads** — up to 10 files per request; PNG, JPEG, GIF, WebP, BMP, PDF, TXT, Markdown, CSV, JSON and XML are accepted. Per-file size is configurable (`MAX_FILE_SIZE_MB`, default 25 MB).
-- **Text extraction** — PDFs and plain-text files get their text extracted (truncated to 100,000 chars) and shown in a preview on the file detail screen.
+- **Text extraction** — PDFs, Office documents (DOC/DOCX/XLS/XLSX/PPT/PPTX/ODT/ODS/ODP/RTF) and plain-text files get their text extracted (truncated to 100,000 chars) and shown in a preview on the file detail screen.
 - **File management** — paginated list with search-by-name, extension filter, and sorting by name, size or upload date; delete with confirmation.
 - **Storage dashboard** — stat cards for total files, storage used and uploads; distribution by file type and a daily-upload bar chart (7/14/30-day windows).
 - **Admin panel** — platform-wide stats, most-uploaded types, 10 most recent uploads, user management (search, role filter, role changes, delete), and deletion of any file.

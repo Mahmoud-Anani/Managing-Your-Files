@@ -38,6 +38,7 @@
     "jsonwebtoken": "^9.0.2",
     "mammoth": "^1.8.0",
     "multer": "^2.0.1",
+    "officeparser": "^7.8.0",
     "pdf-parse": "^1.1.1",
     "resend": "^6.24.0",
     "socket.io": "^4.8.1",
