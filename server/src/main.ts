@@ -60,7 +60,10 @@ async function start(): Promise<void> {
   try {
     await connectWithRetry();
     server = httpServer.listen(env.PORT, () => {
-      const base = `http://localhost:${env.PORT}`;
+      const base =
+        env.NODE_ENV === 'development'
+          ?  `http://localhost:${env.PORT}`
+          : env.BASE_URL;
       console.warn(`[Server] Running on ${env.NODE_ENV} mode`);
       console.warn(`[Server] Running on ${base}`);
       console.warn(`[Server] Swagger UI  → ${base}/api/v1/docs`);
