@@ -28,10 +28,6 @@ type RegisterFormValues = {
   confirmPassword: string;
 };
 
-type VerifyFormValues = {
-  code: string;
-};
-
 export default function RegisterPage() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -40,6 +36,7 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [resendDisabled, setResendDisabled] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(0);
+  const [code, setCode] = useState("");
 
   const registerSchema = useMemo(
     () =>
@@ -69,17 +66,6 @@ export default function RegisterPage() {
     [t],
   );
 
-  const verifySchema = useMemo(
-    () =>
-      z.object({
-        code: z
-          .string()
-          .length(6, t("validation.codeLength"))
-          .regex(/^\d+$/, t("validation.codeDigits")),
-      }),
-    [t],
-  );
-
   const registerForm = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
@@ -88,11 +74,6 @@ export default function RegisterPage() {
   const passwordValue = useWatch({
     control: registerForm.control,
     name: "password",
-  });
-
-  const verifyForm = useForm<VerifyFormValues>({
-    resolver: zodResolver(verifySchema),
-    defaultValues: { code: "" },
   });
 
   const startResendCountdown = () => {
@@ -133,12 +114,12 @@ export default function RegisterPage() {
     }
   };
 
-  const onVerify = async (values: VerifyFormValues) => {
+  const onVerify = async () => {
     setError(null);
     try {
       await api.post("/auth/verify-email", {
         email: pendingEmail,
-        code: values.code,
+        code,
       });
       router.replace("/login?verified=1");
     } catch (err) {
@@ -264,7 +245,10 @@ export default function RegisterPage() {
           </form>
         ) : (
           <form
-            onSubmit={verifyForm.handleSubmit(onVerify)}
+            onSubmit={(event) => {
+              event.preventDefault();
+              onVerify();
+            }}
             className="space-y-4"
           >
             {info ? <Alert variant="success">{info}</Alert> : null}
@@ -277,20 +261,13 @@ export default function RegisterPage() {
                 placeholder={t("common.codePlaceholder")}
                 maxLength={6}
                 autoFocus
-                invalid={Boolean(verifyForm.formState.errors.code)}
-                {...verifyForm.register("code")}
+                value={code}
+                onChange={(event) =>
+                  setCode(event.target.value.replace(/\D/g, ""))
+                }
               />
-              {verifyForm.formState.errors.code ? (
-                <p className="text-sm text-destructive">
-                  {verifyForm.formState.errors.code.message}
-                </p>
-              ) : null}
             </div>
-            <Button
-              type="submit"
-              className="w-full"
-              loading={verifyForm.formState.isSubmitting}
-            >
+            <Button type="submit" className="w-full">
               {t("common.verifyEmail")}
             </Button>
             <div className="text-center text-sm text-muted-foreground">

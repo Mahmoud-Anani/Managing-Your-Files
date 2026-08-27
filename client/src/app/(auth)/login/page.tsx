@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
@@ -31,6 +32,7 @@ type LoginFormValues = {
 export default function LoginPage() {
   const { login } = useAuth();
   const { t } = useTranslation();
+  const router = useRouter();
   // get the courent lang
   const currentLang = i18next.language || i18n.language;
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +67,12 @@ export default function LoginPage() {
       await login(values);
     } catch (err) {
       if (err instanceof ApiError) {
+        if (/verify your email/i.test(err.message)) {
+          router.replace(
+            `/verify?email=${encodeURIComponent(values.email)}`,
+          );
+          return;
+        }
         setError(err.message);
       } else {
         setError(t("common.errorGeneric"));

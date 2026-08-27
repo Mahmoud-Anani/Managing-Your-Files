@@ -44,6 +44,7 @@
   },
   "validation": {
     "invalidEmail": "أدخل عنوان بريد إلكتروني صحيح",
+    "codeRequired": "يجب إدخال الرمز المكون من 6 أرقام",
     "passwordRequired": "كلمة المرور مطلوبة",
     "nameRequired": "الاسم مطلوب",
     "nameTooLong": "الاسم طويل جدًا",
