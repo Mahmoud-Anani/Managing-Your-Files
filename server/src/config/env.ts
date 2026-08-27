@@ -5,7 +5,10 @@ const envSchema = z.object({
     .enum(['development', 'test', 'production'])
     .default('development'),
   PORT: z.coerce.number().int().positive().default(8080),
-  BASE_URL: z.string().url().default('http://localhost:8080'),
+  BASE_URL: z
+    .string()
+    .url()
+    .default('https://managing-your-files-production.up.railway.app'),
   CLIENT_ORIGIN: z.string().url().default('http://localhost:3002'),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   JWT_SECRET: z.string().min(16, 'JWT_SECRET must be at least 16 characters'),
