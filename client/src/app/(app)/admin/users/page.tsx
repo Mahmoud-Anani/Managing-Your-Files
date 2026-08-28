@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Search, Trash2, Users } from "lucide-react";
+import { BellRing, Pencil, Search, Trash2, Users } from "lucide-react";
 import { api, formatDate } from "@/lib/api";
 import { useUsers } from "@/hooks/use-queries";
 import type {
@@ -52,6 +52,8 @@ export default function AdminUsersPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [deleteTarget, setDeleteTarget] = useState<SafeUserDto | null>(null);
   const [editTarget, setEditTarget] = useState<SafeUserDto | null>(null);
+  const [notifyTarget, setNotifyTarget] = useState<SafeUserDto | null>(null);
+  const [notifyForm, setNotifyForm] = useState({ title: "", message: "" });
   const [editForm, setEditForm] = useState({
     name: "",
     email: "",
@@ -152,6 +154,31 @@ export default function AdminUsersPage() {
     onError: (error: unknown) => {
       toast(
         error instanceof Error ? error.message : t("admin.updateFailed"),
+        "error",
+      );
+    },
+  });
+
+  const notifyMutation = useMutation({
+    mutationFn: async ({
+      id,
+      title,
+      message,
+    }: {
+      id: string;
+      title: string;
+      message: string;
+    }) => {
+      await api.post("/notifications/send", { userId: id, title, message });
+    },
+    onSuccess: () => {
+      toast(t("admin.notificationSent"), "success");
+      setNotifyTarget(null);
+      setNotifyForm({ title: "", message: "" });
+    },
+    onError: (error: unknown) => {
+      toast(
+        error instanceof Error ? error.message : t("admin.sendFailed"),
         "error",
       );
     },
@@ -411,6 +438,19 @@ export default function AdminUsersPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
+                                aria-label={t("admin.notifyLabel", {
+                                  name: user.name,
+                                })}
+                                onClick={() => {
+                                  setNotifyTarget(user);
+                                  setNotifyForm({ title: "", message: "" });
+                                }}
+                              >
+                                <BellRing className="size-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
                                 aria-label={t("admin.editLabel", {
                                   name: user.name,
                                 })}
@@ -581,6 +621,77 @@ export default function AdminUsersPage() {
               </Button>
               <Button type="submit" loading={editMutation.isPending}>
                 {t("common.save")}
+              </Button>
+            </div>
+          </form>
+        ) : null}
+      </Modal>
+
+      <Modal
+        open={Boolean(notifyTarget)}
+        onClose={() => setNotifyTarget(null)}
+        title={t("admin.notifyUserTitle")}
+        description={
+          notifyTarget
+            ? t("admin.notifyUserDescription", { name: notifyTarget.name })
+            : undefined
+        }
+      >
+        {notifyTarget ? (
+          <form
+            className="space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              notifyMutation.mutate({
+                id: notifyTarget.id,
+                title: notifyForm.title.trim(),
+                message: notifyForm.message.trim(),
+              });
+            }}
+          >
+            <div className="space-y-2">
+              <Label htmlFor="notify-title">{t("admin.notifyTitleLabel")}</Label>
+              <Input
+                id="notify-title"
+                value={notifyForm.title}
+                onChange={(event) =>
+                  setNotifyForm((current) => ({
+                    ...current,
+                    title: event.target.value,
+                  }))
+                }
+                placeholder={t("admin.notifyTitlePlaceholder")}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="notify-message">
+                {t("admin.notifyMessageLabel")}
+              </Label>
+              <textarea
+                id="notify-message"
+                value={notifyForm.message}
+                onChange={(event) =>
+                  setNotifyForm((current) => ({
+                    ...current,
+                    message: event.target.value,
+                  }))
+                }
+                placeholder={t("admin.notifyMessagePlaceholder")}
+                rows={4}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setNotifyTarget(null)}
+                disabled={notifyMutation.isPending}
+              >
+                {t("common.cancel")}
+              </Button>
+              <Button type="submit" loading={notifyMutation.isPending}>
+                {t("admin.notifySend")}
               </Button>
             </div>
           </form>

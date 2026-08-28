@@ -540,6 +540,29 @@
     "editLabel": "تعديل {{name}}",
     "editUserTitle": "تعديل المستخدم",
     "editUserDescription": "تحديث \"{{email}}\".",
-    "userUpdated": "تم تحديث المستخدم."
+    "userUpdated": "تم تحديث المستخدم.",
+    "notifyLabel": "إرسال إشعار إلى {{name}}",
+    "notifyUserTitle": "إرسال إشعار",
+    "notifyUserDescription": "إشعار \"{{name}}\" برسالة.",
+    "notifyTitleLabel": "العنوان",
+    "notifyTitlePlaceholder": "مثال: مرحباً بك في منصة إدارة ملفاتك",
+    "notifyMessageLabel": "الرسالة",
+    "notifyMessagePlaceholder": "اكتب رسالتك…",
+    "notifySend": "إرسال الإشعار",
+    "notificationSent": "تم إرسال الإشعار.",
+    "sendFailed": "تعذر إرسال الإشعار."
+  },
+  "notifications": {
+    "bellLabel": "الإشعارات",
+    "unreadCount": "{{count}} إشعارات غير مقروءة",
+    "title": "الإشعارات",
+    "markAllRead": "تحديد الكل كمقروء",
+    "empty": "لا توجد إشعارات جديدة.",
+    "time": {
+      "justNow": "الآن",
+      "minutesAgo": "منذ {{count}} د",
+      "hoursAgo": "منذ {{count}} س",
+      "daysAgo": "منذ {{count}} يوم"
+    }
   }
 }

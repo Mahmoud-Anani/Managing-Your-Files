@@ -2,7 +2,10 @@ import type { Permission } from '@prisma/client';
 import { prisma } from '../../config/prisma';
 import { NotFoundError, ForbiddenError, ConflictError } from '../../common/errors';
 import type { ShareFileDto, UpdateShareDto } from './sharing.dto';
-import { emitToUser } from '../../socket';
+import { emitToUser, getSocketServer } from '../../socket';
+import { NotificationService } from '../notifications/notification.service';
+
+const notificationService = new NotificationService();
 
 export interface ShareResult {
   id: string;
@@ -69,13 +72,35 @@ export class SharingService {
       include: { sharedWith: { select: { id: true, name: true, email: true } } },
     });
 
-    const io = (globalThis as any).__socketServer;
+    const io = getSocketServer();
     if (io) {
       emitToUser(io, sharedWithUser.id, 'share:created', {
         fileId,
         sharedBy: { id: sharedById },
         permission: dto.permission,
       });
+    }
+
+    const sharer = await prisma.user.findUnique({
+      where: { id: sharedById },
+      select: { name: true },
+    });
+
+    try {
+      await notificationService.notifyUser(sharedWithUser.id, {
+        type: 'SHARE_CREATED',
+        title: 'File shared with you',
+        message: `${sharer?.name ?? 'A user'} shared "${file.originalName}" with you${
+          dto.permission === 'EDIT' ? ' (can edit)' : ' (view only)'
+        }.`,
+        metadata: {
+          fileId,
+          sharedById,
+          permission: dto.permission,
+        },
+      });
+    } catch {
+      // Notifications are best-effort and must never break the sharing flow.
     }
 
     return share;
@@ -114,7 +139,7 @@ export class SharingService {
 
     await prisma.fileShare.delete({ where: { id: shareId } });
 
-    const io = (globalThis as any).__socketServer;
+    const io = getSocketServer();
     if (io) {
       emitToUser(io, share.sharedWithId, 'share:removed', {
         shareId,

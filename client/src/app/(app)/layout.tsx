@@ -26,6 +26,7 @@ import { useSocketEvents } from "@/hooks/use-socket-events";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/layout/logo";
 import { PreferencesControls } from "@/components/preferences-controls";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { ProtectedRoute } from "@/components/guards/protected-route";
 import { cn } from "@/lib/utils";
 
@@ -95,7 +96,10 @@ function AppShell({ children }: { children: React.ReactNode }) {
               {t("appShell.hello")}
             </p>
           </div>
-          <PreferencesControls />
+          <div className="flex items-center gap-1 md:gap-2">
+            <NotificationBell />
+            <PreferencesControls />
+          </div>
         </header>
         <motion.main
           key={pathname}

@@ -151,3 +151,22 @@ export interface SharedFileDto {
   permission: "VIEW" | "EDIT";
   createdAt: string;
 }
+
+export interface NotificationPayload {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+  metadata: Record<string, unknown> | null;
+}
+
+export interface ListNotificationsQuery {
+  page?: number;
+  limit?: number;
+}
+
+export interface UnreadCountResponse {
+  count: number;
+}

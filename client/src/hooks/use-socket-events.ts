@@ -7,7 +7,7 @@ import { useSocket } from "@/lib/socket";
 import { useToast } from "@/components/ui/toast";
 
 export function useSocketEvents() {
-  const socket = useSocket();
+  const { socket } = useSocket();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -35,6 +35,20 @@ export function useSocketEvents() {
     const invalidateSharing = () => {
       queryClient.invalidateQueries({ queryKey: ["sharing"] });
       queryClient.invalidateQueries({ queryKey: ["files", "trash"] });
+    };
+
+    const invalidateNotifications = () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications", "unread"] });
+    };
+
+    const onNotificationNew = (
+      payload?: { title?: string; message?: string } | null,
+    ) => {
+      invalidateNotifications();
+      if (payload?.message) {
+        toast(payload.message, "info");
+      }
     };
 
     const onFileUploaded = () => {
@@ -125,6 +139,7 @@ export function useSocketEvents() {
     socket.on("admin:user:deleted", onAdminUserDeleted);
     socket.on("share:created", onShareCreated);
     socket.on("share:removed", onShareRemoved);
+    socket.on("notification:new", onNotificationNew);
 
     return () => {
       socket.off("file:uploaded", onFileUploaded);
@@ -142,6 +157,7 @@ export function useSocketEvents() {
       socket.off("admin:user:deleted", onAdminUserDeleted);
       socket.off("share:created", onShareCreated);
       socket.off("share:removed", onShareRemoved);
+      socket.off("notification:new", onNotificationNew);
     };
   }, [socket, queryClient, t, toast]);
 }

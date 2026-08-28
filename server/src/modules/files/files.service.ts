@@ -17,10 +17,12 @@ import {
 } from './file-mapper';
 import { extractText } from './text-extractor';
 import { AuditService, type AuditContext } from '../audit/audit.service';
+import { NotificationService } from '../notifications/notification.service';
 import type { AdminListFilesQueryDto, ListFilesQueryDto } from './files.dto';
-import { emitToUser, emitToAdmins } from '../../socket';
+import { emitToUser, emitToAdmins, getSocketServer } from '../../socket';
 
 const auditService = new AuditService();
+const notificationService = new NotificationService();
 
 function fileOrderBy(
   sortBy: 'createdAt' | 'name' | 'size',
@@ -116,7 +118,7 @@ export class FilesService {
     }
 
     if (records.length > 0) {
-      const io = (globalThis as any).__socketServer;
+      const io = getSocketServer();
       if (io) {
         emitToUser(io, user.id, 'file:uploaded', {
           files: records.map(toSafeFileDto),
@@ -124,6 +126,45 @@ export class FilesService {
         emitToAdmins(io, 'admin:file:uploaded', {
           files: records.map(toSafeFileDto),
         });
+      }
+    }
+
+    for (const record of records) {
+      try {
+        await notificationService.notifyUser(user.id, {
+          type: 'FILE_UPLOADED',
+          title: 'File uploaded',
+          message: `Your file "${record.originalName}" was uploaded successfully.`,
+          metadata: { fileId: record.id, fileName: record.originalName },
+        });
+      } catch {
+        // Notifications are best-effort and must never break the upload.
+      }
+
+      if (record.extractedText) {
+        try {
+          await notificationService.notifyUser(user.id, {
+            type: 'FILE_PROCESSING_COMPLETED',
+            title: 'File processing completed',
+            message: `The content of "${record.originalName}" has been extracted and is ready to search.`,
+            metadata: { fileId: record.id, fileName: record.originalName },
+          });
+        } catch {
+          // Best-effort.
+        }
+      }
+    }
+
+    if (records.length > 0) {
+      try {
+        await notificationService.notifyAdmins({
+          type: 'ADMIN_NEW_UPLOADS',
+          title: 'New file upload',
+          message: `${user.name} uploaded ${records.length} file(s).`,
+          metadata: { count: records.length, userId: user.id },
+        });
+      } catch {
+        // Best-effort.
       }
     }
 
@@ -258,13 +299,24 @@ export class FilesService {
       ctx,
     });
 
-    const io = (globalThis as any).__socketServer;
+    const io = getSocketServer();
     if (io) {
       emitToUser(io, file.userId, 'file:deleted', { fileId: file.id });
       emitToAdmins(io, 'admin:file:deleted', {
         fileId: file.id,
         ownerId: file.userId,
       });
+    }
+
+    try {
+      await notificationService.notifyUser(file.userId, {
+        type: 'FILE_DELETED',
+        title: 'File moved to trash',
+        message: `"${file.originalName}" was moved to trash.`,
+        metadata: { fileId: file.id, fileName: file.originalName },
+      });
+    } catch {
+      // Best-effort.
     }
 
     return { message: 'File moved to trash' };
@@ -296,7 +348,7 @@ export class FilesService {
     });
 
     const dto = toSafeFileDto(restored);
-    const io = (globalThis as any).__socketServer;
+    const io = getSocketServer();
     if (io) {
       emitToUser(io, file.userId, 'file:restored', { file: dto });
       emitToAdmins(io, 'admin:file:restored', {
@@ -331,7 +383,7 @@ export class FilesService {
       ctx,
     });
 
-    const io = (globalThis as any).__socketServer;
+    const io = getSocketServer();
     if (io) {
       emitToUser(io, file.userId, 'file:purged', { fileId: file.id });
       emitToAdmins(io, 'admin:file:purged', {
@@ -422,13 +474,24 @@ export class FilesService {
       ctx,
     });
 
-    const io = (globalThis as any).__socketServer;
+    const io = getSocketServer();
     if (io) {
       emitToUser(io, file.userId, 'file:deleted', { fileId: file.id });
       emitToAdmins(io, 'admin:file:deleted', {
         fileId: file.id,
         ownerId: file.userId,
       });
+    }
+
+    try {
+      await notificationService.notifyUser(file.userId, {
+        type: 'FILE_DELETED_BY_ADMIN',
+        title: 'File deleted by administrator',
+        message: `"${file.originalName}" was deleted by an administrator.`,
+        metadata: { fileId: file.id, fileName: file.originalName },
+      });
+    } catch {
+      // Best-effort.
     }
 
     return { message: 'File moved to trash' };
@@ -459,7 +522,7 @@ export class FilesService {
     });
 
     const dto = toSafeFileDto(restored);
-    const io = (globalThis as any).__socketServer;
+    const io = getSocketServer();
     if (io) {
       emitToUser(io, file.userId, 'file:restored', { file: dto });
       emitToAdmins(io, 'admin:file:restored', {
@@ -493,7 +556,7 @@ export class FilesService {
       ctx,
     });
 
-    const io = (globalThis as any).__socketServer;
+    const io = getSocketServer();
     if (io) {
       emitToUser(io, file.userId, 'file:purged', { fileId: file.id });
       emitToAdmins(io, 'admin:file:purged', {

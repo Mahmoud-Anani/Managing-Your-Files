@@ -14,6 +14,7 @@ import { adminFilesRouter, filesRouter } from './modules/files/files.routes';
 import auditRoutes from './modules/audit/audit.routes';
 import statsRoutes from './modules/stats/stats.routes';
 import sharingRoutes from './modules/sharing/sharing.routes';
+import notificationRoutes from './modules/notifications/notification.routes';
 import { swaggerRouter } from './docs/swagger.routes';
 import { createSocketServer } from './socket';
 
@@ -42,6 +43,7 @@ apiRouter.use('/admin/files', adminFilesRouter);
 apiRouter.use('/admin/audit-logs', auditRoutes);
 apiRouter.use('/stats', statsRoutes);
 apiRouter.use('/sharing', sharingRoutes);
+apiRouter.use('/notifications', notificationRoutes);
 apiRouter.use('/', swaggerRouter);
 
 app.use('/api/v1', apiRouter);

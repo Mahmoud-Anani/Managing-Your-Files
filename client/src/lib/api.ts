@@ -1,5 +1,12 @@
 import axios, { AxiosError } from "axios";
 
+declare module "axios" {
+  export interface AxiosRequestConfig {
+    /** Set once a 401-triggered refresh has already retried this request. */
+    _retried?: boolean;
+  }
+}
+
 export class ApiError extends Error {
   public readonly statusCode: number;
   public readonly errorName?: string;
@@ -71,12 +78,22 @@ api.interceptors.response.use(
   async (error: unknown) => {
     const axiosError = error as AxiosError;
 
-    if (axiosError.response?.status === 401 && !axiosError.config?.url?.includes("/auth/")) {
+    const config = axiosError.config;
+    // Only retry-after-refresh ONCE per request. Guarding `_retried` prevents an
+    // unbounded loop when a refresh succeeds (minting a fresh cookie) but the
+    // retried request still 401s (e.g. account disabled / role revoked), which
+    // would otherwise hammer the backend with refresh+retry forever.
+    if (
+      !config?._retried &&
+      axiosError.response?.status === 401 &&
+      !config?.url?.includes("/auth/")
+    ) {
+      config!._retried = true;
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
-          .then(() => api(axiosError.config!))
+          .then(() => api(config!))
           .catch((err) => Promise.reject(toApiError(err)));
       }
 
@@ -85,7 +102,7 @@ api.interceptors.response.use(
       try {
         await api.post("/auth/refresh");
         processQueue(null);
-        return api(axiosError.config!);
+        return api(config!);
       } catch (refreshError) {
         processQueue(refreshError);
         if (typeof window !== "undefined") {
@@ -106,12 +123,18 @@ uploadApi.interceptors.response.use(
   async (error: unknown) => {
     const axiosError = error as AxiosError;
 
-    if (axiosError.response?.status === 401 && !axiosError.config?.url?.includes("/auth/")) {
+    const uploadConfig = axiosError.config;
+    if (
+      !uploadConfig?._retried &&
+      axiosError.response?.status === 401 &&
+      !uploadConfig?.url?.includes("/auth/")
+    ) {
+      uploadConfig!._retried = true;
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
-          .then(() => uploadApi(axiosError.config!))
+          .then(() => uploadApi(uploadConfig!))
           .catch((err) => Promise.reject(toApiError(err)));
       }
 
@@ -120,7 +143,7 @@ uploadApi.interceptors.response.use(
       try {
         await api.post("/auth/refresh");
         processQueue(null);
-        return uploadApi(axiosError.config!);
+        return uploadApi(uploadConfig!);
       } catch (refreshError) {
         processQueue(refreshError);
         if (typeof window !== "undefined") {

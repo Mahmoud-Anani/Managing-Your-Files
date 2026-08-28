@@ -546,6 +546,29 @@
     "editLabel": "Edit {{name}}",
     "editUserTitle": "Edit user",
     "editUserDescription": "Updating \"{{email}}\".",
-    "userUpdated": "User updated."
+    "userUpdated": "User updated.",
+    "notifyLabel": "Send notification to {{name}}",
+    "notifyUserTitle": "Send notification",
+    "notifyUserDescription": "Notify \"{{name}}\" with a message.",
+    "notifyTitleLabel": "Title",
+    "notifyTitlePlaceholder": "e.g. Welcome to Managing Your Files",
+    "notifyMessageLabel": "Message",
+    "notifyMessagePlaceholder": "Write your message…",
+    "notifySend": "Send notification",
+    "notificationSent": "Notification sent.",
+    "sendFailed": "Could not send the notification."
+  },
+  "notifications": {
+    "bellLabel": "Notifications",
+    "unreadCount": "{{count}} unread notifications",
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "empty": "You're all caught up.",
+    "time": {
+      "justNow": "Just now",
+      "minutesAgo": "{{count}}m ago",
+      "hoursAgo": "{{count}}h ago",
+      "daysAgo": "{{count}}d ago"
+    }
   }
 }

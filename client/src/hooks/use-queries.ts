@@ -9,10 +9,13 @@ import type {
   FileDetailDto,
   ListAuditLogsQuery,
   ListFilesQuery,
+  ListNotificationsQuery,
   ListUsersQuery,
+  NotificationPayload,
   PaginatedResult,
   SafeFileDto,
   SafeUserDto,
+  UnreadCountResponse,
   UserStats,
 } from "@/types";
 
@@ -26,6 +29,9 @@ export const queryKeys = {
   users: (query: ListUsersQuery) => ["users", query] as const,
   auditLogs: (query: ListAuditLogsQuery) => ["audit-logs", query] as const,
   auditActions: () => ["audit-actions"] as const,
+  notifications: (query: ListNotificationsQuery) =>
+    ["notifications", query] as const,
+  notificationsUnread: () => ["notifications", "unread"] as const,
 };
 
 export function useUserStats(days = 7) {
@@ -134,6 +140,31 @@ export function useAuditActions() {
         "/admin/audit-logs/actions",
       );
       return data.data;
+    },
+  });
+}
+
+export function useNotifications(query: ListNotificationsQuery) {
+  return useQuery({
+    queryKey: queryKeys.notifications(query),
+    queryFn: async () => {
+      const { data } = await api.get<PaginatedResult<NotificationPayload>>(
+        "/notifications",
+        { params: query },
+      );
+      return data;
+    },
+  });
+}
+
+export function useUnreadNotificationCount() {
+  return useQuery({
+    queryKey: queryKeys.notificationsUnread(),
+    queryFn: async () => {
+      const { data } = await api.get<UnreadCountResponse>(
+        "/notifications/unread-count",
+      );
+      return data.count;
     },
   });
 }
