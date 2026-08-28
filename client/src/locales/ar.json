@@ -12,6 +12,7 @@
     "newPassword": "كلمة مرور جديدة",
     "confirm": "تأكيد",
     "cancel": "إلغاء",
+    "save": "حفظ",
     "open": "فتح",
     "loading": "جارٍ التحميل…",
     "uploading": "جارٍ الرفع…",
@@ -535,6 +536,10 @@
     "auditAction": "الإجراء",
     "auditUser": "المستخدم",
     "auditEntity": "الكيان",
-    "auditIp": "عنوان IP"
+    "auditIp": "عنوان IP",
+    "editLabel": "تعديل {{name}}",
+    "editUserTitle": "تعديل المستخدم",
+    "editUserDescription": "تحديث \"{{email}}\".",
+    "userUpdated": "تم تحديث المستخدم."
   }
 }

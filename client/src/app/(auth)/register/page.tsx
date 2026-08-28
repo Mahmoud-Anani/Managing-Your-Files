@@ -165,6 +165,7 @@ export default function RegisterPage() {
       <CardContent>
         {!pendingEmail ? (
           <form
+            key="register-form"
             onSubmit={registerForm.handleSubmit(onRegister)}
             className="space-y-4"
           >
@@ -245,6 +246,7 @@ export default function RegisterPage() {
           </form>
         ) : (
           <form
+            key="verify-form"
             onSubmit={(event) => {
               event.preventDefault();
               onVerify();

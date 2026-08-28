@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, Trash2, Users } from "lucide-react";
+import { Pencil, Search, Trash2, Users } from "lucide-react";
 import { api, formatDate } from "@/lib/api";
 import { useUsers } from "@/hooks/use-queries";
 import type {
@@ -18,6 +18,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
+import { Modal } from "@/components/ui/modal";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -49,6 +51,13 @@ export default function AdminUsersPage() {
   const [sortBy, setSortBy] = useState<UserSortBy>("createdAt");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [deleteTarget, setDeleteTarget] = useState<SafeUserDto | null>(null);
+  const [editTarget, setEditTarget] = useState<SafeUserDto | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    email: "",
+    role: "USER" as Role,
+    isVerified: true,
+  });
   const [createOpen, setCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState({
     name: "",
@@ -102,6 +111,29 @@ export default function AdminUsersPage() {
     onError: (error: unknown) => {
       toast(
         error instanceof Error ? error.message : t("admin.deleteFailed"),
+        "error",
+      );
+    },
+  });
+
+  const editMutation = useMutation({
+    mutationFn: async ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: { name?: string; email?: string; role?: Role; isVerified?: boolean };
+    }) => {
+      await api.patch(`/users/${id}`, payload);
+    },
+    onSuccess: () => {
+      toast(t("admin.userUpdated"), "success");
+      setEditTarget(null);
+      invalidate();
+    },
+    onError: (error: unknown) => {
+      toast(
+        error instanceof Error ? error.message : t("admin.updateFailed"),
         "error",
       );
     },
@@ -375,17 +407,37 @@ export default function AdminUsersPage() {
                             {formatDate(user.createdAt)}
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              aria-label={t("files.deleteLabel", {
-                                name: user.name,
-                              })}
-                              disabled={isSelf}
-                              onClick={() => setDeleteTarget(user)}
-                            >
-                              <Trash2 className="size-4 text-destructive" />
-                            </Button>
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label={t("admin.editLabel", {
+                                  name: user.name,
+                                })}
+                                onClick={() => {
+                                  setEditTarget(user);
+                                  setEditForm({
+                                    name: user.name,
+                                    email: user.email,
+                                    role: user.role,
+                                    isVerified: user.isVerified,
+                                  });
+                                }}
+                              >
+                                <Pencil className="size-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label={t("files.deleteLabel", {
+                                  name: user.name,
+                                })}
+                                disabled={isSelf}
+                                onClick={() => setDeleteTarget(user)}
+                              >
+                                <Trash2 className="size-4 text-destructive" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
@@ -426,160 +478,115 @@ export default function AdminUsersPage() {
         }}
       />
 
-      {/* <Card className="mt-4">
-        <CardContent>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="relative flex-1">
-              <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+      <Modal
+        open={Boolean(editTarget)}
+        onClose={() => setEditTarget(null)}
+        title={t("admin.editUserTitle")}
+        description={
+          editTarget
+            ? t("admin.editUserDescription", { email: editTarget.email })
+            : undefined
+        }
+      >
+        {editTarget ? (
+          <form
+            className="space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!editTarget) {
+                return;
+              }
+              editMutation.mutate({
+                id: editTarget.id,
+                payload: {
+                  name: editForm.name.trim() || undefined,
+                  email: editForm.email.trim() || undefined,
+                  role: editForm.role,
+                  isVerified: editForm.isVerified,
+                },
+              });
+            }}
+          >
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">{t("common.fullName")}</Label>
               <Input
-                value={searchInput}
-                onChange={(event) => setSearchInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    applySearch();
-                  }
-                }}
-                placeholder={t("admin.searchPlaceholder")}
-                className="ps-9"
+                id="edit-name"
+                value={editForm.name}
+                onChange={(event) =>
+                  setEditForm((current) => ({
+                    ...current,
+                    name: event.target.value,
+                  }))
+                }
               />
             </div>
-            <div className="flex items-center gap-1">
-              {(["", "USER", "ADMIN"] as const).map((value) => (
-                <Button
-                  key={value}
-                  variant={roleFilter === value ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={() => {
-                    setRoleFilter(value);
-                    setPage(1);
-                  }}
-                >
-                  {value === "" ? t("admin.all") : value}
-                </Button>
-              ))}
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">{t("common.email")}</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={editForm.email}
+                onChange={(event) =>
+                  setEditForm((current) => ({
+                    ...current,
+                    email: event.target.value,
+                  }))
+                }
+              />
             </div>
-            <Button variant="outline" onClick={applySearch}>
-              {t("common.search")}
-            </Button>
-          </div>
-
-          <div className="mt-4">
-            {isLoading ? (
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                {Array.from({ length: 6 }).map((_, index) => (
-                  <Skeleton key={index} className="h-12 w-full" />
-                ))}
+                <Label htmlFor="edit-role">{t("admin.role")}</Label>
+                <select
+                  id="edit-role"
+                  value={editForm.role}
+                  disabled={editTarget.id === currentUser?.id}
+                  onChange={(event) =>
+                    setEditForm((current) => ({
+                      ...current,
+                      role: event.target.value as Role,
+                    }))
+                  }
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="USER">USER</option>
+                  <option value="ADMIN">ADMIN</option>
+                </select>
               </div>
-            ) : !data || data.data.length === 0 ? (
-              <EmptyState
-                icon={<Users className="size-6" />}
-                title={t("admin.noUsersFound")}
-                description={t("files.adjustFilters")}
-              />
-            ) : (
-              <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <SortableHead
-                        label={t("files.name")}
-                        active={sortBy === "name"}
-                        order={sortOrder}
-                        onClick={() => toggleSort("name")}
-                      />
-                      <SortableHead
-                        label={t("common.email")}
-                        active={sortBy === "email"}
-                        order={sortOrder}
-                        onClick={() => toggleSort("email")}
-                      />
-                      <TableHead>{t("admin.status")}</TableHead>
-                      <TableHead>{t("admin.role")}</TableHead>
-                      <SortableHead
-                        label={t("admin.joined")}
-                        active={sortBy === "createdAt"}
-                        order={sortOrder}
-                        onClick={() => toggleSort("createdAt")}
-                      />
-                      <TableHead className="text-right">
-                        {t("files.actions")}
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.data.map((user) => {
-                      const isSelf = user.id === currentUser?.id;
-                      return (
-                        <TableRow key={user.id}>
-                          <TableCell className="font-medium">
-                            {user.name}
-                            {isSelf ? (
-                              <Badge variant="secondary" className="ms-2">
-                                {t("admin.you")}
-                              </Badge>
-                            ) : null}
-                          </TableCell>
-                          <TableCell>{user.email}</TableCell>
-                          <TableCell>
-                            {user.isVerified ? (
-                              <Badge variant="success">
-                                {t("admin.verified")}
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline">
-                                {t("admin.unverified")}
-                              </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <select
-                              value={user.role}
-                              disabled={isSelf || roleMutation.isPending}
-                              onChange={(event) =>
-                                roleMutation.mutate({
-                                  id: user.id,
-                                  role: event.target.value as Role,
-                                })
-                              }
-                              className="h-8 rounded-md border border-input bg-background px-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              <option value="USER">USER</option>
-                              <option value="ADMIN">ADMIN</option>
-                            </select>
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap text-muted-foreground">
-                            {formatDate(user.createdAt)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              aria-label={t("files.deleteLabel", {
-                                name: user.name,
-                              })}
-                              disabled={isSelf}
-                              onClick={() => setDeleteTarget(user)}
-                            >
-                              <Trash2 className="size-4 text-destructive" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-                <Pagination
-                  className="mt-4"
-                  page={data.pagination.page}
-                  totalPages={data.pagination.totalPages}
-                  total={data.pagination.total}
-                  onPageChange={setPage}
-                />
-              </>
-            )}
-          </div>
-        </CardContent>
-      </Card> */}
+              <div className="flex items-end">
+                <label className="flex cursor-pointer items-center gap-2 pb-2 text-sm font-medium">
+                  <input
+                    type="checkbox"
+                    checked={editForm.isVerified}
+                    onChange={(event) =>
+                      setEditForm((current) => ({
+                        ...current,
+                        isVerified: event.target.checked,
+                      }))
+                    }
+                    className="size-4"
+                  />
+                  {t("admin.verified")}
+                </label>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditTarget(null)}
+                disabled={editMutation.isPending}
+              >
+                {t("common.cancel")}
+              </Button>
+              <Button type="submit" loading={editMutation.isPending}>
+                {t("common.save")}
+              </Button>
+            </div>
+          </form>
+        ) : null}
+      </Modal>
+
     </div>
   );
 }

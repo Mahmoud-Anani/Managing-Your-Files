@@ -11,6 +11,7 @@
     "delete": "Delete",
     "confirm": "Confirm",
     "cancel": "Cancel",
+    "save": "Save",
     "open": "Open",
     "loading": "Loading…",
     "uploading": "Uploading…",
@@ -541,6 +542,10 @@
     "auditAction": "Action",
     "auditUser": "User",
     "auditEntity": "Entity",
-    "auditIp": "IP"
+    "auditIp": "IP",
+    "editLabel": "Edit {{name}}",
+    "editUserTitle": "Edit user",
+    "editUserDescription": "Updating \"{{email}}\".",
+    "userUpdated": "User updated."
   }
 }
