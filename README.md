@@ -13,7 +13,7 @@ The repo is a monorepo with two applications:
 
 ## Features
 
-- **Email-verified accounts** — 6-digit OTP codes (10-minute expiry, 60-second resend cooldown) sent via the Resend API; codes are logged to the console in development when `RESEND_API_KEY` is not configured.
+- **Email-verified accounts** — 6-digit OTP codes (10-minute expiry, 60-second resend cooldown) sent via the Brevo API; codes are logged to the console in development when `BREVO_API_KEY` is not configured.
 - **Batch uploads** — up to 10 files per request; PNG, JPEG, GIF, WebP, BMP, PDF, TXT, Markdown, CSV, JSON and XML are accepted. Per-file size is configurable (`MAX_FILE_SIZE_MB`, default 25 MB).
 - **Text extraction** — PDFs, Office documents (DOC/DOCX/XLS/XLSX/PPT/PPTX/ODT/ODS/ODP/RTF) and plain-text files get their text extracted (truncated to 100,000 chars) and shown in a preview on the file detail screen.
 - **File management** — paginated list with search-by-name, extension filter, and sorting by name, size or upload date; delete with confirmation.
@@ -118,8 +118,9 @@ The client runs at `http://localhost:3002`.
 | `ADMIN_EMAIL`               | no       | `admin@example.com`                          | Seed admin email                                                           |
 | `ADMIN_NAME`                | no       | `Admin`                                      | Seed admin name                                                            |
 | `ADMIN_PASSWORD`            | no       | `Admin123`                                   | Seed admin password (min 8 chars + a number)                               |
-| `RESEND_API_KEY`           | no       | empty                                        | Resend API key; when empty, verification codes are logged to the console |
-| `EMAIL_FROM`               | no       | `Managing Your Files <onboarding@resend.dev>` | Verified sender address                                                    |
+| `BREVO_API_KEY`            | no       | empty                                        | Brevo API key; when empty, verification codes are logged to the console |
+| `EMAIL_FROM`               | no       | empty                                        | Verified Brevo sender email ("Single Sender Verification", no domain needed) |
+| `EMAIL_FROM_NAME`          | no       | `Managing Your Files`                        | Display name shown as the email sender                                    |
 | `MAX_FILE_SIZE_MB`          | no       | `25`                                         | Per-file upload limit (1–100 MB)                                           |
 
 > `DATABASE_URL` and `JWT_SECRET` are validated at boot — the server refuses to start without them.

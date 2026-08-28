@@ -1,7 +1,67 @@
-import { Resend } from 'resend';
+import { BrevoClient } from '@getbrevo/brevo';
+import { AppError } from './errors';
 import { env } from '../config/env';
 
-const resend = new Resend(env.RESEND_API_KEY || '');
+/**
+ * Payload accepted by `MailService.sendEmail`. Mirrors the transport-agnostic
+ * surface used by the app's email senders.
+ */
+export interface MailPayload {
+  /** Recipient email address. */
+  to: string;
+  /** Optional recipient display name. */
+  toName?: string;
+  /** Email subject line. */
+  subject: string;
+  /** HTML body content. */
+  htmlContent: string;
+  /** Optional plain-text body content. */
+  textContent?: string;
+}
+
+/**
+ * Centralized Brevo (Sendinblue) transactional email transport.
+ *
+ * Brevo sends over the HTTPS API (not SMTP), which works on Railway without
+ * SMTP port configuration. NOTE: the `EMAIL_FROM` sender address must be
+ * verified in the Brevo dashboard via "Single Sender Verification" — no domain
+ * or DNS setup is required.
+ */
+class MailService {
+  private readonly client: BrevoClient | null;
+
+  constructor() {
+    this.client = env.BREVO_API_KEY ? new BrevoClient({ apiKey: env.BREVO_API_KEY }) : null;
+  }
+
+  async sendEmail(payload: MailPayload): Promise<void> {
+    if (this.client && env.EMAIL_FROM) {
+      try {
+        await this.client.transactionalEmails.sendTransacEmail({
+          htmlContent: payload.htmlContent,
+          textContent: payload.textContent,
+          subject: payload.subject,
+          sender: { email: env.EMAIL_FROM, name: env.EMAIL_FROM_NAME },
+          to: [{ email: payload.to, name: payload.toName }],
+        });
+        return;
+      } catch (error) {
+        // Log the useful server-side error; the API key is never surfaced. The
+        // AppError flows through the app's standard error-handler so the client
+        // receives the usual error response (and no false success is reported).
+        console.error(`[BREVO] Failed to send email to ${payload.to}:`, error);
+        throw new AppError(500, 'Failed to send email');
+      }
+    }
+
+    // No Brevo credentials configured — development fallback.
+    console.warn(
+      `[DEV EMAIL] Subject "${payload.subject}" for ${payload.to}: ${payload.textContent ?? payload.htmlContent}`,
+    );
+  }
+}
+
+const mailService = new MailService();
 
 const BRAND = {
   primary: '#0e7c56',
@@ -353,17 +413,11 @@ export async function sendVerificationEmail(
 
   const html = wrapTemplate(content, `Your verification code is ${code}`);
 
-  if (!env.RESEND_API_KEY) {
-    console.warn(`[DEV EMAIL] Verification code for ${to}: ${code}`);
-    return;
-  }
-
-  await resend.emails.send({
-    from: env.EMAIL_FROM,
+  await mailService.sendEmail({
     to,
     subject,
-    text,
-    html,
+    htmlContent: html,
+    textContent: text,
   });
 }
 
@@ -535,16 +589,10 @@ export async function sendPasswordResetEmail(
 
   const html = wrapTemplate(content, `Your password reset code is ${code}`);
 
-  if (!env.RESEND_API_KEY) {
-    console.warn(`[DEV EMAIL] Password reset code for ${to}: ${code}`);
-    return;
-  }
-
-  await resend.emails.send({
-    from: env.EMAIL_FROM,
+  await mailService.sendEmail({
     to,
     subject,
-    text,
-    html,
+    htmlContent: html,
+    textContent: text,
   });
 }
