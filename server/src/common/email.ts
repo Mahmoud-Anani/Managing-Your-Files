@@ -43,11 +43,6 @@ class MailService {
     const configured = Boolean(this.client && env.EMAIL_FROM);
 
     if (configured) {
-      console.log({
-        from: `${env.EMAIL_FROM_NAME} <${env.EMAIL_FROM}>`,
-        to: payload.to,
-      });
-
       try {
         await this.client!.emails.send({
           from: `${env.EMAIL_FROM_NAME} <${env.EMAIL_FROM}>`,
@@ -613,6 +608,162 @@ export async function sendPasswordResetEmail(
 
   await mailService.sendEmail({
     to,
+    subject,
+    htmlContent: html,
+    textContent: text,
+  });
+}
+
+export async function sendWelcomeEmail(
+  to: string,
+  toName?: string,
+): Promise<void> {
+  const name = toName?.trim() || 'there';
+  const firstName = name.split(' ')[0] ?? name;
+  const subject = `Welcome to Managing Your Files, ${firstName}`;
+  const text =
+    `Hello${name ? ' ' + name : ''},\n\n` +
+    `Welcome to Managing Your Files! Your account is all set and ready to go.\n` +
+    `Upload and organize your files, preview documents, and share them with your team — securely, from anywhere.\n\n` +
+    `If you didn't create this account, someone may have signed up using your email. Please contact support immediately.\n`;
+
+  const content = `
+    <!-- Icon -->
+    <tr>
+      <td align="center" style="padding:40px 40px 0;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+          <tr>
+            <td style="background-color:${BRAND.primaryLight};border-radius:50%;padding:20px;">
+              ${CHECK_ICON}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- Title -->
+    <tr>
+      <td align="center" style="padding:24px 40px 0;">
+        <h1 style="margin:0;font-size:24px;font-weight:600;color:${BRAND.foreground};letter-spacing:-0.02em;">
+          Welcome, ${name}!
+        </h1>
+      </td>
+    </tr>
+
+    <!-- Description -->
+    <tr>
+      <td align="center" style="padding:12px 40px 0;">
+        <p style="margin:0;font-size:15px;line-height:1.6;color:${BRAND.muted};">
+          Your account is all set and ready to go. We're glad to have you on board.
+        </p>
+      </td>
+    </tr>
+
+    <!-- Divider -->
+    <tr>
+      <td style="padding:32px 40px 0;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+          <tr>
+            <td style="border-bottom:1px solid ${BRAND.border};"></td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- Features -->
+    <tr>
+      <td style="padding:24px 40px 0;">
+        <span style="font-size:13px;font-weight:500;color:${BRAND.muted};text-transform:uppercase;letter-spacing:0.05em;">
+          What you can do
+        </span>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:16px;">
+          <tr>
+            <td style="padding-bottom:12px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td style="padding-right:12px;vertical-align:middle;">
+                    ${UPLOAD_ICON.replace(/width="\d+"/, 'width="20"').replace(/height="\d+"/, 'height="20"')}
+                  </td>
+                  <td>
+                    <span style="font-size:14px;color:${BRAND.foreground};">
+                      Upload and organize your files
+                    </span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding-bottom:12px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td style="padding-right:12px;vertical-align:middle;">
+                    ${FILE_ICON.replace(/width="\d+"/, 'width="20"').replace(/height="\d+"/, 'height="20"')}
+                  </td>
+                  <td>
+                    <span style="font-size:14px;color:${BRAND.foreground};">
+                      Preview and download from anywhere
+                    </span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td style="padding-right:12px;vertical-align:middle;">
+                    ${SHIELD_ICON.replace(/width="\d+"/, 'width="20"').replace(/height="\d+"/, 'height="20"')}
+                  </td>
+                  <td>
+                    <span style="font-size:14px;color:${BRAND.foreground};">
+                      Secure cloud storage with encryption
+                    </span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- Security Note -->
+    <tr>
+      <td align="center" style="padding:24px 40px 0;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width:100%;">
+          <tr>
+            <td style="background-color:${BRAND.accent};border-radius:8px;padding:16px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td style="padding-right:12px;vertical-align:top;">
+                    ${SHIELD_ICON.replace(/width="\d+"/, 'width="20"').replace(/height="\d+"/, 'height="20"')}
+                  </td>
+                  <td>
+                    <span style="font-size:13px;color:${BRAND.primaryDark};line-height:1.5;">
+                      If you didn't create this account, someone may have used your email. Contact support immediately.
+                    </span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- Spacer -->
+    <tr>
+      <td style="padding:32px 0;"></td>
+    </tr>
+  `;
+
+  const html = wrapTemplate(content, `Welcome to Managing Your Files, ${name}`);
+
+  await mailService.sendEmail({
+    to,
+    toName,
     subject,
     htmlContent: html,
     textContent: text,

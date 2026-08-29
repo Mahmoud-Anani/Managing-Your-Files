@@ -14,6 +14,7 @@ import { generateOtpCode, OTP_TTL_MS } from '../../common/otp';
 import {
   sendVerificationEmail,
   sendPasswordResetEmail,
+  sendWelcomeEmail,
 } from '../../common/email';
 import { toSafeUserDto, type SafeUserDto } from '../../common/user-mapper';
 import {
@@ -246,6 +247,14 @@ export class AuthService {
       metadata: { email: user.email },
       ctx,
     });
+
+    // Send a best-effort welcome email. A delivery failure is logged but never
+    // blocks or fails the login — the user is already authenticated.
+    try {
+      await sendWelcomeEmail(user.email, user.name);
+    } catch (error) {
+      console.error(`[EMAIL] Failed to send welcome email to ${user.email}:`, error);
+    }
 
     return { user: toSafeUserDto(user) };
   }
