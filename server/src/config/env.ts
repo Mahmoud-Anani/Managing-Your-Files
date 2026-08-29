@@ -29,7 +29,7 @@ const envSchema = z.object({
   ADMIN_EMAIL: z.string().email().default('admin@example.com'),
   ADMIN_NAME: z.string().min(1).default('Admin'),
   ADMIN_PASSWORD: z.string().min(8).default('Admin123'),
-  BREVO_API_KEY: z.string().optional().or(z.literal('')),
+  RESEND_API_KEY: z.string().optional().or(z.literal('')),
   EMAIL_FROM: z.string().optional().or(z.literal('')),
   EMAIL_FROM_NAME: z.string().default('Managing Your Files'),
   MAX_FILE_SIZE_MB: z.coerce.number().int().positive().max(100).default(25),

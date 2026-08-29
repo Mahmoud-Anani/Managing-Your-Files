@@ -1,4 +1,4 @@
-import { BrevoClient } from '@getbrevo/brevo';
+import { Resend } from 'resend';
 import { AppError } from './errors';
 import { env } from '../config/env';
 
@@ -20,41 +20,63 @@ export interface MailPayload {
 }
 
 /**
- * Centralized Brevo (Sendinblue) transactional email transport.
+ * Centralized Resend transactional email transport.
  *
- * Brevo sends over the HTTPS API (not SMTP), which works on Railway without
- * SMTP port configuration. NOTE: the `EMAIL_FROM` sender address must be
- * verified in the Brevo dashboard via "Single Sender Verification" — no domain
- * or DNS setup is required.
+ * Resend sends over the HTTPS API (not SMTP), which works on Railway without
+ * SMTP port configuration. NOTE: the `EMAIL_FROM` sender must be an address on
+ * a domain you own and verify in Resend — Resend does not send from arbitrary
+ * senders.
+ *
+ * Production hardening: sending requires both `RESEND_API_KEY` and a configured
+ * `EMAIL_FROM`. If either is missing in production, delivery fails loudly (500)
+ * so a misconfigured deployment is never silently dropped; only development and
+ * test fall back to logging codes to the console.
  */
 class MailService {
-  private readonly client: BrevoClient | null;
+  private readonly client: Resend | null;
 
   constructor() {
-    this.client = env.BREVO_API_KEY ? new BrevoClient({ apiKey: env.BREVO_API_KEY }) : null;
+    this.client = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
   }
 
   async sendEmail(payload: MailPayload): Promise<void> {
-    if (this.client && env.EMAIL_FROM) {
+    const configured = Boolean(this.client && env.EMAIL_FROM);
+
+    if (configured) {
+      console.log({
+        from: `${env.EMAIL_FROM_NAME} <${env.EMAIL_FROM}>`,
+        to: payload.to,
+      });
+
       try {
-        await this.client.transactionalEmails.sendTransacEmail({
-          htmlContent: payload.htmlContent,
-          textContent: payload.textContent,
+        await this.client!.emails.send({
+          from: `${env.EMAIL_FROM_NAME} <${env.EMAIL_FROM}>`,
+          to: payload.to,
           subject: payload.subject,
-          sender: { email: env.EMAIL_FROM, name: env.EMAIL_FROM_NAME },
-          to: [{ email: payload.to, name: payload.toName }],
+          html: payload.htmlContent,
+          text: payload.textContent,
         });
         return;
       } catch (error) {
         // Log the useful server-side error; the API key is never surfaced. The
         // AppError flows through the app's standard error-handler so the client
         // receives the usual error response (and no false success is reported).
-        console.error(`[BREVO] Failed to send email to ${payload.to}:`, error);
+        console.error(`[RESEND] Failed to send email to ${payload.to}:`, error);
         throw new AppError(500, 'Failed to send email');
       }
     }
 
-    // No Brevo credentials configured — development fallback.
+    // Not fully configured. In production this must fail loudly rather than
+    // silently dropping auth emails, so operators notice the misconfiguration.
+    if (env.NODE_ENV === 'production') {
+      console.error(
+        '[RESEND] Email delivery is not configured. Set RESEND_API_KEY and ' +
+          'EMAIL_FROM (a verified Resend sender) in the production environment.',
+      );
+      throw new AppError(500, 'Email delivery is not configured');
+    }
+
+    // Development/test fallback — log the code to the console.
     console.warn(
       `[DEV EMAIL] Subject "${payload.subject}" for ${payload.to}: ${payload.textContent ?? payload.htmlContent}`,
     );
